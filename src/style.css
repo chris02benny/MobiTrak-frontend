@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #0c0c0c;
+  color: white;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1c1c1c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #fabb24;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e6a61a;
+}
+
+/* Glassmorphism Style Kit */
+.glass-card {
+  @apply bg-white/10 backdrop-blur-md rounded-xl shadow-lg border border-white/20;
+}
+
+.glass-form {
+  @apply bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 shadow-lg;
+}
+
+.glass-button {
+  @apply bg-[#fabb24] text-black font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-[#facc4d] transition-all duration-200;
+}
+
+.glass-button-secondary {
+  @apply bg-white/10 backdrop-blur-sm text-white font-semibold px-4 py-2 rounded-lg border border-white/20 hover:bg-white/20 transition-all duration-200;
+}
+
+.glass-input {
+  @apply bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#fabb24] focus:border-transparent transition-all duration-200;
+}
+
+.glass-modal {
+  @apply bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 shadow-2xl;
+}
+
+.glass-sidebar {
+  @apply bg-black/40 backdrop-blur-lg border-r border-white/10;
+}
+
+.glass-navbar {
+  @apply bg-black/40 backdrop-blur-lg border-b border-white/10;
+}
+
+.glass-hero {
+  @apply bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-sm rounded-2xl border border-white/10;
+}
+
+/* Enhanced animations */
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 20px rgba(250, 187, 36, 0.3); }
+  to { box-shadow: 0 0 30px rgba(250, 187, 36, 0.6); }
+}
