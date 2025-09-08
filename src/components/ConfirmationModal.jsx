@@ -31,7 +31,7 @@ const ConfirmationModal = ({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative glass-modal p-6 max-w-md w-full mx-4"
+          className="relative enterprise-modal p-6 max-w-md w-full mx-4"
         >
           <div className="text-center">
             <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
@@ -41,7 +41,7 @@ const ConfirmationModal = ({
               <button
                 onClick={onClose}
                 disabled={loading}
-                className="glass-button-secondary px-4 py-2 disabled:opacity-50"
+                className="enterprise-button-secondary px-4 py-2 disabled:opacity-50"
               >
                 {cancelText}
               </button>

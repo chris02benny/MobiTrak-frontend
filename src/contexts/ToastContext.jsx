@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import Toast from '../components/Toast'
 
 const ToastContext = createContext()
@@ -14,43 +15,38 @@ export const useToast = () => {
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([])
 
-  const showToast = (message, type = 'success', duration = 3000) => {
+  const showToast = useCallback((message, type = 'success', duration = 3000) => {
     const id = Date.now()
     const newToast = { id, message, type, duration }
-    
+
     setToasts(prev => [...prev, newToast])
-    
-    // Auto remove after duration
-    setTimeout(() => {
-      removeToast(id)
-    }, duration)
-  }
+  }, [])
 
-  const removeToast = (id) => {
+  const removeToast = useCallback((id) => {
     setToasts(prev => prev.filter(toast => toast.id !== id))
-  }
+  }, [])
 
-  const value = {
+  const value = useMemo(() => ({
     showToast,
     removeToast
-  }
+  }), [showToast, removeToast])
 
   return (
     <ToastContext.Provider value={value}>
       {children}
       
-      {/* Render toasts */}
       <div className="fixed top-4 right-4 z-50 space-y-2">
-        {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            isVisible={true}
-            message={toast.message}
-            type={toast.type}
-            duration={0} // Handled by context
-            onClose={() => removeToast(toast.id)}
-          />
-        ))}
+        <AnimatePresence>
+          {toasts.map((toast) => (
+            <Toast
+              key={toast.id}
+              message={toast.message}
+              type={toast.type}
+              duration={toast.duration}
+              onClose={() => removeToast(toast.id)}
+            />
+          ))}
+        </AnimatePresence>
       </div>
     </ToastContext.Provider>
   )

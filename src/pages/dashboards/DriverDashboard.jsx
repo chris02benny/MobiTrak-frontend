@@ -1,19 +1,129 @@
-import React from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import DashboardLayout from '../../components/DashboardLayout'
 import DashboardCard from '../../components/DashboardCard'
+import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
+import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 
 const DriverDashboard = () => {
+  const [profileData, setProfileData] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [profileComplete, setProfileComplete] = useState(false)
+
+  const { supabase, user } = useAuth()
+  const { showToast } = useToast()
+  const navigate = useNavigate()
+
   const sidebarItems = [
-    { icon: '📊', label: 'Overview', onClick: () => {} },
-    { icon: '🛣️', label: 'My Trips', onClick: () => {} },
-    { icon: '📅', label: 'Schedule', onClick: () => {} },
-    { icon: '📈', label: 'Performance', onClick: () => {} },
-    { icon: '🚗', label: 'Vehicle Status', onClick: () => {} },
-    { icon: '💰', label: 'Earnings', onClick: () => {} },
+    {
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
+      label: 'Overview',
+      onClick: () => {}
+    },
+    { 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      ), 
+      label: 'My Trips', 
+      onClick: () => {} 
+    },
+    { 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-2 2m8-2l2 2m-2-2v10a2 2 0 01-2 2H8a2 2 0 01-2-2V9a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H8a2 2 0 01-2-2V9z" />
+        </svg>
+      ), 
+      label: 'Schedule', 
+      onClick: () => {} 
+    },
+    { 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ), 
+      label: 'Performance', 
+      onClick: () => {} 
+    },
+    { 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ), 
+      label: 'Vehicle Status', 
+      onClick: () => {} 
+    },
+    { 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+        </svg>
+      ), 
+      label: 'Earnings', 
+      onClick: () => {} 
+    },
+    {
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      ),
+      label: 'Profile',
+      onClick: () => navigate('/profile/driver')
+    },
   ]
 
-  return (
-    <DashboardLayout title="Driver Dashboard" sidebarItems={sidebarItems}>
+  // Fetch profile data for overview
+  const fetchProfile = useCallback(async () => {
+    if (!user?.id || !supabase) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('driver_profiles')
+        .select('profile_complete, full_name, license_number')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (data) {
+        setProfileData(data);
+        setProfileComplete(data.profile_complete || false);
+      } else {
+        // No profile exists yet, create one
+        const { error: insertError } = await supabase
+          .from('driver_profiles')
+          .insert([{ user_id: user.id }]);
+
+        if (insertError) {
+          console.error('Error creating driver profile:', insertError);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      showToast(error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, supabase, showToast]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const renderOverviewSection = () => (
+    <>
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <DashboardCard
@@ -83,9 +193,9 @@ const DriverDashboard = () => {
                 <div>
                   <h4 className="font-semibold">Trip #1248</h4>
                   <p className="text-sm text-gray-300">Business District → Hotel Plaza</p>
-                  <p className="text-xs text-gray-500">Customer: Mike Chen</p>
+                  <p className="text-xs text-gray-500">2:30 PM - 3:15 PM</p>
                 </div>
-                <span className="text-sm text-primary font-semibold">2:30 PM</span>
+                <span className="text-primary font-semibold">$28</span>
               </div>
             </div>
             <div className="border-l-4 border-gray-600 pl-4">
@@ -93,98 +203,76 @@ const DriverDashboard = () => {
                 <div>
                   <h4 className="font-semibold">Trip #1249</h4>
                   <p className="text-sm text-gray-300">Residential Area → Shopping Center</p>
-                  <p className="text-xs text-gray-500">Customer: Lisa Wong</p>
+                  <p className="text-xs text-gray-500">4:00 PM - 4:45 PM</p>
                 </div>
-                <span className="text-sm text-gray-400 font-semibold">4:15 PM</span>
-              </div>
-            </div>
-            <div className="border-l-4 border-gray-600 pl-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-semibold">Trip #1250</h4>
-                  <p className="text-sm text-gray-300">Train Station → University</p>
-                  <p className="text-xs text-gray-500">Customer: David Park</p>
-                </div>
-                <span className="text-sm text-gray-400 font-semibold">6:00 PM</span>
+                <span className="text-primary font-semibold">$22</span>
               </div>
             </div>
           </div>
         </DashboardCard>
 
-        {/* Vehicle Information */}
-        <DashboardCard title="Vehicle Information" className="col-span-1">
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-300">Vehicle ID</span>
-              <span className="text-white font-semibold">V-007</span>
+        {/* Recent Activity */}
+        <DashboardCard title="Recent Activity" className="col-span-1">
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm">Completed trip to Airport - $45</span>
+              <span className="text-xs text-gray-500 ml-auto">1h ago</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-300">Model</span>
-              <span className="text-white font-semibold">Toyota Camry 2023</span>
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-sm">New trip request accepted</span>
+              <span className="text-xs text-gray-500 ml-auto">2h ago</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-300">Fuel Level</span>
-              <span className="text-green-400 font-semibold">85%</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-300">Mileage</span>
-              <span className="text-white font-semibold">45,230 miles</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-300">Next Service</span>
-              <span className="text-primary font-semibold">In 2,770 miles</span>
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <span className="text-sm">Vehicle inspection reminder</span>
+              <span className="text-xs text-gray-500 ml-auto">3h ago</span>
             </div>
           </div>
         </DashboardCard>
       </div>
+    </>
+  );
 
-      {/* Performance Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        <DashboardCard
-          title="Weekly Performance"
-          subtitle="This week's statistics"
-          icon="📊"
-        >
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Trips Completed</span>
-              <span className="text-primary">28</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Total Distance</span>
-              <span className="text-primary">1,245 miles</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Average Rating</span>
-              <span className="text-primary">4.9/5.0</span>
+  // Profile completion section in overview
+  const renderProfileCompletionSection = () => (
+    !profileComplete && (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="enterprise-card p-6 mb-8 border-l-4 border-yellow-500"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <svg className="w-6 h-6 text-yellow-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <div>
+              <h3 className="text-lg font-semibold text-yellow-400">Complete Your Driver Profile</h3>
+              <p className="text-gray-300">Fill in your driving license information to start receiving ride requests.</p>
             </div>
           </div>
-        </DashboardCard>
+          <button
+            onClick={() => navigate('/profile/driver')}
+            className="enterprise-button px-6 py-2 text-sm font-medium"
+          >
+            Complete Profile
+          </button>
+        </div>
+      </motion.div>
+    )
+  );
 
-        <DashboardCard
-          title="Earnings Summary"
-          subtitle="This week"
-          icon="💰"
-        >
-          <div className="text-center">
-            <div className="text-2xl font-bold text-primary mb-2">$1,245</div>
-            <div className="text-sm text-green-400">+18% from last week</div>
-          </div>
-        </DashboardCard>
-
-        <DashboardCard
-          title="Driving Score"
-          subtitle="Safety & efficiency"
-          icon="🏆"
-        >
-          <div className="text-center">
-            <div className="text-2xl font-bold text-primary mb-2">92/100</div>
-            <div className="text-sm text-green-400">Excellent performance</div>
-          </div>
-        </DashboardCard>
-      </div>
+  return (
+    <DashboardLayout
+      title="Driver Dashboard"
+      sidebarItems={sidebarItems}
+    >
+      {renderProfileCompletionSection()}
+      {renderOverviewSection()}
     </DashboardLayout>
-  )
-}
+  );
+};
 
-export default DriverDashboard
+export default DriverDashboard;

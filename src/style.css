@@ -35,41 +35,91 @@ body {
   background: #e6a61a;
 }
 
-/* Glassmorphism Style Kit */
-.glass-card {
-  @apply bg-white/10 backdrop-blur-md rounded-xl shadow-lg border border-white/20;
+/* Enterprise Style Kit */
+.enterprise-card {
+  @apply bg-gray-800 rounded-lg shadow-lg border border-gray-700 hover:border-gray-600 transition-all duration-200;
 }
 
-.glass-form {
-  @apply bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 shadow-lg;
+.enterprise-form {
+  @apply bg-gray-800 p-6 rounded-lg border border-gray-700 shadow-lg;
 }
 
-.glass-button {
-  @apply bg-[#fabb24] text-black font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-[#facc4d] transition-all duration-200;
+.enterprise-button {
+  @apply bg-[#fabb24] text-black font-semibold px-4 py-2 rounded-md shadow-sm hover:bg-[#facc4d] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#fabb24] focus:ring-offset-2 focus:ring-offset-gray-900;
 }
 
-.glass-button-secondary {
-  @apply bg-white/10 backdrop-blur-sm text-white font-semibold px-4 py-2 rounded-lg border border-white/20 hover:bg-white/20 transition-all duration-200;
+.enterprise-button-secondary {
+  @apply bg-gray-700 text-white font-semibold px-4 py-2 rounded-md border border-gray-600 hover:bg-gray-600 hover:border-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900;
 }
 
-.glass-input {
-  @apply bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#fabb24] focus:border-transparent transition-all duration-200;
+.enterprise-input {
+  @apply bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fabb24] focus:border-transparent transition-all duration-200;
 }
 
-.glass-modal {
-  @apply bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 shadow-2xl;
+.enterprise-modal {
+  @apply bg-gray-800 rounded-lg border border-gray-700 shadow-2xl;
 }
 
-.glass-sidebar {
-  @apply bg-black/40 backdrop-blur-lg border-r border-white/10;
+.enterprise-sidebar {
+  @apply bg-gray-900 border-r border-gray-700;
 }
 
-.glass-navbar {
-  @apply bg-black/40 backdrop-blur-lg border-b border-white/10;
+.enterprise-navbar {
+  @apply bg-gray-900/95 border border-gray-700/50;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-.glass-hero {
-  @apply bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-sm rounded-2xl border border-white/10;
+.enterprise-hero {
+  @apply bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg border border-gray-700;
+}
+
+/* Glass effects only for overlays and modals */
+.glass-overlay {
+  @apply bg-white/10 backdrop-blur-md rounded-lg border border-white/20;
+}
+
+/* Responsive navbar and sidebar styles */
+.enterprise-card {
+  @apply bg-gray-800 border border-gray-700 shadow-xl;
+}
+
+/* Modern navbar styling */
+.enterprise-navbar {
+  position: relative;
+  overflow: hidden;
+}
+
+.enterprise-navbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(250, 187, 36, 0.1) 0%, rgba(250, 187, 36, 0.05) 100%);
+  pointer-events: none;
+}
+
+/* Smooth transitions for mobile menu */
+.mobile-menu-enter {
+  @apply transform translate-x-full;
+}
+
+.mobile-menu-enter-active {
+  @apply transform translate-x-0 transition-transform duration-300 ease-out;
+}
+
+.mobile-menu-exit {
+  @apply transform translate-x-0;
+}
+
+.mobile-menu-exit-active {
+  @apply transform translate-x-full transition-transform duration-300 ease-in;
+}
+
+.glass-modal-overlay {
+  @apply bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 shadow-2xl;
 }
 
 /* Enhanced animations */

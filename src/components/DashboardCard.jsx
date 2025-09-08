@@ -14,10 +14,10 @@ const DashboardCard = ({
 }) => {
   return (
     <motion.div
-      whileHover={{ scale: 1.02, y: -5 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
       onClick={onClick}
-      className={`glass-card p-6 hover:bg-white/15 transition-all duration-300 cursor-pointer group ${className}`}
+      className={`enterprise-card p-6 hover:shadow-xl transition-all duration-200 cursor-pointer group ${className}`}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
@@ -30,7 +30,7 @@ const DashboardCard = ({
           )}
         </div>
         {icon && (
-          <div className="text-3xl text-primary ml-4 group-hover:scale-110 transition-transform duration-300">
+          <div className="text-2xl text-[#fabb24] ml-4 group-hover:text-[#facc4d] transition-colors duration-200">
             {icon}
           </div>
         )}

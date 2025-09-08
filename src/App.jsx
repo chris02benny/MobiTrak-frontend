@@ -9,6 +9,12 @@ import RegisterPage from './pages/auth/RegisterPage'
 import BusinessDashboard from './pages/dashboards/BusinessDashboard'
 import DriverDashboard from './pages/dashboards/DriverDashboard'
 import CustomerDashboard from './pages/dashboards/CustomerDashboard'
+import ProfilePage from './pages/ProfilePage'
+import DriverProfilePage from './pages/driver/ProfilePage'
+import AddVehiclePage from './pages/business/AddVehiclePage'
+import ManageLabelsPage from './pages/business/ManageLabelsPage'
+import ViewVehiclesPage from './pages/business/ViewVehiclesPage'
+import DriverManagementPage from './pages/business/DriverManagementPage'
 
 // Import context providers
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -101,6 +107,56 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute allowedRoles={['customer']}>
               <CustomerDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Business Feature Routes */}
+        <Route
+          path="/business/add-vehicle"
+          element={
+            <ProtectedRoute allowedRoles={['business']}>
+              <AddVehiclePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/business/labels"
+          element={
+            <ProtectedRoute allowedRoles={['business']}>
+              <ManageLabelsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/business/vehicles"
+          element={
+            <ProtectedRoute allowedRoles={['business']}>
+              <ViewVehiclesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/business/drivers"
+          element={
+            <ProtectedRoute allowedRoles={['business']}>
+              <DriverManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute allowedRoles={['driver', 'business', 'customer']}>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/driver"
+          element={
+            <ProtectedRoute allowedRoles={['driver']}>
+              <DriverProfilePage />
             </ProtectedRoute>
           }
         />

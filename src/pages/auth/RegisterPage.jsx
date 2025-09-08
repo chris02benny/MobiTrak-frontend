@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
+import ResponsiveLayout from '../../components/ResponsiveLayout'
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -11,11 +13,10 @@ const RegisterPage = () => {
     role: 'customer'
   })
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   
   const { signUp } = useAuth()
   const navigate = useNavigate()
+  const { showToast } = useToast()
 
   // Note: Auto-redirect is now handled in App.jsx to prevent flash of register page
 
@@ -57,18 +58,16 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    setError('')
-    setSuccess('')
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+      showToast('Passwords do not match', 'error')
       setLoading(false)
       return
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters')
+      showToast('Password must be at least 6 characters', 'error')
       setLoading(false)
       return
     }
@@ -77,9 +76,9 @@ const RegisterPage = () => {
       const { error } = await signUp(formData.email, formData.password, formData.role)
 
       if (error) {
-        setError(error.message)
+        showToast(error.message, 'error')
       } else {
-        setSuccess('Registration successful! Please check your email to verify your account before signing in.')
+        showToast('Registration successful! Please check your email to verify your account.', 'success')
         // Clear form
         setFormData({
           email: '',
@@ -93,14 +92,15 @@ const RegisterPage = () => {
         }, 3000)
       }
     } catch (err) {
-      setError('An unexpected error occurred')
+      showToast('An unexpected error occurred', 'error')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-bgBlack flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <ResponsiveLayout>
+      <div className="min-h-[calc(100vh-6rem)] flex items-center justify-center px-4 py-8 relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5"></div>
       <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float"></div>
@@ -140,28 +140,8 @@ const RegisterPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="glass-form"
+          className="enterprise-form"
         >
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg mb-6"
-            >
-              {error}
-            </motion.div>
-          )}
-
-          {success && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-lg mb-6"
-            >
-              {success}
-            </motion.div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Role Selection */}
             <div>
@@ -178,8 +158,8 @@ const RegisterPage = () => {
                     whileTap={{ scale: 0.98 }}
                     className={`p-4 rounded-lg border-2 transition-all text-left ${
                       formData.role === role.id
-                        ? 'border-primary bg-primary/20 text-white glass-card'
-                        : 'glass-card border-white/20 text-gray-300 hover:bg-white/15'
+                        ? 'border-primary bg-primary/20 text-white enterprise-card'
+                        : 'enterprise-card border-white/20 text-gray-300 hover:bg-white/15'
                     }`}
                   >
                     <div className="flex items-center">
@@ -207,7 +187,7 @@ const RegisterPage = () => {
                 required
                 value={formData.email}
                 onChange={handleInputChange}
-                className="glass-input w-full"
+                className="enterprise-input w-full"
                 placeholder="Enter your email"
               />
             </div>
@@ -225,7 +205,7 @@ const RegisterPage = () => {
                 required
                 value={formData.password}
                 onChange={handleInputChange}
-                className="glass-input w-full"
+                className="enterprise-input w-full"
                 placeholder="Create a password"
               />
             </div>
@@ -243,7 +223,7 @@ const RegisterPage = () => {
                 required
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                className="glass-input w-full"
+                className="enterprise-input w-full"
                 placeholder="Confirm your password"
               />
             </div>
@@ -272,7 +252,7 @@ const RegisterPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full glass-button py-3 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full enterprise-button py-3 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating account...' : 'Create account'}
             </button>
@@ -287,7 +267,8 @@ const RegisterPage = () => {
           </p>
         </motion.div>
       </motion.div>
-    </div>
+      </div>
+    </ResponsiveLayout>
   )
 }
 
