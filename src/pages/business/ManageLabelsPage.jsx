@@ -5,6 +5,7 @@ import { useToast } from '../../contexts/ToastContext';
 import DashboardLayout from '../../components/DashboardLayout';
 import DashboardCard from '../../components/DashboardCard';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import { Plus, Tag } from 'lucide-react';
 
 const ManageLabelsPage = () => {
   const { user } = useAuth();
@@ -280,7 +281,7 @@ const ManageLabelsPage = () => {
           onClick={openCreateModal}
           className="enterprise-button px-6 py-3 flex items-center space-x-2"
         >
-          <span>➕</span>
+          <Plus className="w-5 h-5" />
           <span>Create Label</span>
         </motion.button>
       </div>
@@ -346,7 +347,7 @@ const ManageLabelsPage = () => {
 
       {labels.length === 0 && (
         <div className="text-center py-12">
-          <div className="text-6xl mb-4">��️</div>
+          <div className="flex justify-center mb-4">��️</div>
           <h3 className="text-xl font-semibold text-white mb-2">No Labels Yet</h3>
           <p className="text-gray-400 mb-6">Create your first label to organize your vehicles</p>
           <motion.button

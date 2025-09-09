@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import DashboardCard from '../../components/DashboardCard';
+import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import {
+  Car,
+  Route,
+  DollarSign,
+  AlertTriangle,
+  Trophy,
+  Fuel,
+  Star
+} from 'lucide-react';
 
 const BusinessDashboard = () => {
   const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
@@ -17,11 +27,14 @@ const BusinessDashboard = () => {
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [vehicleToDelete, setVehicleToDelete] = useState(null);
+  const { user } = useAuth();
   const { showToast } = useToast();
 
   const fetchVehicles = async () => {
+    if (!user?.id) return;
+
     try {
-      const response = await fetch('http://localhost:5000/vehicles');
+      const response = await fetch(`http://localhost:5000/vehicles?business_id=${user.id}`);
       const data = await response.json();
       if (response.ok) {
         setVehicles(data.data);
@@ -36,7 +49,7 @@ const BusinessDashboard = () => {
 
   useEffect(() => {
     fetchVehicles();
-  }, []);
+  }, [user?.id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -45,13 +58,23 @@ const BusinessDashboard = () => {
 
   const handleAddVehicleSubmit = async (e) => {
     e.preventDefault();
+    if (!user?.id) return;
+
     try {
+      const vehicleData = {
+        ...newVehicle,
+        business_id: user.id,
+        registration_number: newVehicle.license_plate, // Map license_plate to registration_number
+        vehicle_type: 'car', // Default vehicle type
+        status: 'available' // Default status
+      };
+
       const response = await fetch('http://localhost:5000/vehicles', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newVehicle),
+        body: JSON.stringify(vehicleData),
       });
       const data = await response.json();
       if (response.ok) {
@@ -336,7 +359,7 @@ const BusinessDashboard = () => {
               title="Total Vehicles"
               value={vehicles.length.toString()}
               subtitle="Active fleet vehicles"
-              icon="🚗"
+              icon={<Car className="w-6 h-6" />}
               trend="up"
               trendValue="+2"
             />
@@ -344,7 +367,7 @@ const BusinessDashboard = () => {
               title="Active Trips"
               value="12"
               subtitle="Currently in progress"
-              icon="🛣️"
+              icon={<Route className="w-6 h-6" />}
               trend="up"
               trendValue="+5"
             />
@@ -352,7 +375,7 @@ const BusinessDashboard = () => {
               title="Revenue"
               value="$15,420"
               subtitle="This month"
-              icon="💰"
+              icon={<DollarSign className="w-6 h-6" />}
               trend="up"
               trendValue="+12%"
             />
@@ -360,7 +383,7 @@ const BusinessDashboard = () => {
               title="Maintenance Due"
               value="3"
               subtitle="Vehicles need service"
-              icon="⚠️"
+              icon={<AlertTriangle className="w-6 h-6" />}
               trend="down"
               trendValue="-1"
             />
@@ -413,7 +436,7 @@ const BusinessDashboard = () => {
             <DashboardCard
               title="Driver Performance"
               subtitle="Top performing drivers this month"
-              icon="🏆"
+              icon={<Trophy className="w-6 h-6" />}
             >
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
@@ -434,7 +457,7 @@ const BusinessDashboard = () => {
             <DashboardCard
               title="Fuel Efficiency"
               subtitle="Average across fleet"
-              icon="⛽"
+              icon={<Fuel className="w-6 h-6" />}
             >
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary mb-2">24.5 MPG</div>
@@ -445,7 +468,7 @@ const BusinessDashboard = () => {
             <DashboardCard
               title="Customer Satisfaction"
               subtitle="Based on recent feedback"
-              icon="⭐"
+              icon={<Star className="w-6 h-6" />}
             >
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary mb-2">4.8/5.0</div>

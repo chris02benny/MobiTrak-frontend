@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import DashboardLayout from '../../components/DashboardLayout';
 import DashboardCard from '../../components/DashboardCard';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import UpgradeModal from '../../components/UpgradeModal';
 
 const AddVehiclePage = () => {
   const { user } = useAuth();
@@ -14,14 +16,20 @@ const AddVehiclePage = () => {
     model: '',
     year: '',
     registration_number: '',
-    vehicle_type: 'sedan',
-    label_id: '',
     chassis_number: '',
     owner_name: '',
     status: 'available'
   });
-  
-  const [labels, setLabels] = useState([]);
+
+  // Validation states
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [carMakes, setCarMakes] = useState([]);
+  const [filteredMakes, setFilteredMakes] = useState([]);
+  const [showMakeDropdown, setShowMakeDropdown] = useState(false);
+  const [makesLoading, setMakesLoading] = useState(false);
+
+
   const [loading, setLoading] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [vehicleImage, setVehicleImage] = useState(null);
@@ -29,34 +37,213 @@ const AddVehiclePage = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [showOcrModal, setShowOcrModal] = useState(false);
   const [ocrData, setOcrData] = useState(null);
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const subscriptionFetchedRef = useRef(false);
 
-  useEffect(() => {
-    fetchLabels();
-  }, []);
-
-  const fetchLabels = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/labels?business_id=${user.id}`);
-      const data = await response.json();
-      if (response.ok) {
-        setLabels(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching labels:', error);
-    }
+  // Validation patterns
+  const validationPatterns = {
+    registrationNumber: /^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}$/,
+    chassisNumber: /^[A-Z0-9]{10,20}$/,
+    ownerName: /^[A-Za-z\s]{3,}$/
   };
 
-  const handleInputChange = (e) => {
+  // Fetch car makes from NHTSA API
+  const fetchCarMakes = useCallback(async () => {
+    if (carMakes.length > 0) return; // Already fetched
+
+    setMakesLoading(true);
+    try {
+      const response = await fetch('https://vpic.nhtsa.dot.gov/api/vehicles/getallmakes?format=json');
+      const data = await response.json();
+      if (data.Results) {
+        const makes = data.Results.map(make => make.Make_Name).sort();
+        setCarMakes(makes);
+      }
+    } catch (error) {
+      console.error('Error fetching car makes:', error);
+      showToast('Failed to load car makes', 'error');
+    } finally {
+      setMakesLoading(false);
+    }
+  }, [carMakes.length, showToast]);
+
+  // Validation functions
+  const validateField = useCallback((name, value) => {
+    const currentYear = new Date().getFullYear();
+
+    switch (name) {
+      case 'make':
+        if (!value.trim()) return 'Make is required';
+        if (carMakes.length > 0 && !carMakes.some(make =>
+          make.toLowerCase() === value.toLowerCase()
+        )) {
+          return 'Please select a valid car make from the dropdown';
+        }
+        return '';
+
+      case 'model':
+        if (!value.trim()) return 'Model is required';
+        if (value.trim().length < 2) return 'Model must be at least 2 characters';
+        return '';
+
+      case 'year':
+        if (!value) return 'Year is required';
+        const yearNum = parseInt(value);
+        if (yearNum < 1980 || yearNum > currentYear) {
+          return `Year must be between 1980 and ${currentYear}`;
+        }
+        return '';
+
+
+      case 'registration_number':
+        if (!value.trim()) return 'Registration number is required';
+        if (!validationPatterns.registrationNumber.test(value.toUpperCase())) {
+          return 'Invalid format. Example: KA01AB1234';
+        }
+        return '';
+
+      case 'chassis_number':
+        if (!value.trim()) return 'Chassis number is required';
+        if (!validationPatterns.chassisNumber.test(value.toUpperCase())) {
+          return 'Invalid format. Must be 10-20 uppercase letters and digits';
+        }
+        return '';
+
+      case 'owner_name':
+        if (!value.trim()) return 'Owner name is required';
+        if (!validationPatterns.ownerName.test(value)) {
+          return 'Owner name must be at least 3 characters and contain only letters and spaces';
+        }
+        return '';
+
+      default:
+        return '';
+    }
+  }, [carMakes]);
+
+  // Real-time validation on keyup
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
+
+    // Update form data
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+
+    // Mark field as touched
+    setTouched(prev => ({
+      ...prev,
+      [name]: true
+    }));
+
+    // Validate field
+    const error = validateField(name, value);
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+
+    // Handle make field autocomplete
+    if (name === 'make') {
+      if (value.trim()) {
+        const filtered = carMakes.filter(make =>
+          make.toLowerCase().includes(value.toLowerCase())
+        );
+        setFilteredMakes(filtered);
+        setShowMakeDropdown(filtered.length > 0);
+      } else {
+        setShowMakeDropdown(false);
+      }
+    }
+  }, [validateField, carMakes]);
+
+  const fetchSubscriptionData = useCallback(async () => {
+    if (!user?.id || subscriptionFetchedRef.current) return; // Prevent multiple calls
+
+    subscriptionFetchedRef.current = true;
+    setSubscriptionLoading(true);
+    try {
+      const response = await fetch(`http://localhost:5000/subscription/${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSubscriptionData(data);
+      } else {
+        console.error('Error fetching subscription data: HTTP', response.status);
+        // Set default subscription data if fetch fails
+        setSubscriptionData({
+          subscription_type: 'free',
+          vehicle_limit: 5,
+          current_count: 0,
+          can_add_vehicle: true
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching subscription data:', error);
+      // Set default subscription data if fetch fails
+      setSubscriptionData({
+        subscription_type: 'free',
+        vehicle_limit: 5,
+        current_count: 0,
+        can_add_vehicle: true
+      });
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (user?.id) {
+      subscriptionFetchedRef.current = false; // Reset ref when user changes
+      fetchSubscriptionData();
+      fetchCarMakes();
+    }
+  }, [user?.id, fetchCarMakes, fetchSubscriptionData]);
+
+
+
+
+
+  // File validation functions
+  const validateImageFile = (file) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!allowedTypes.includes(file.type)) {
+      return 'Only JPG and PNG files are allowed';
+    }
+    if (file.size > maxSize) {
+      return 'File size must be less than 5MB';
+    }
+    return '';
+  };
+
+  const validateRcBookFile = (file) => {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+
+    if (!allowedTypes.includes(file.type)) {
+      return 'Only PDF, JPG, and PNG files are allowed';
+    }
+    if (file.size > maxSize) {
+      return 'File size must be less than 10MB';
+    }
+    return '';
   };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      const error = validateImageFile(file);
+      if (error) {
+        setErrors(prev => ({ ...prev, vehicle_image: error }));
+        showToast(error, 'error');
+        return;
+      }
+
+      setErrors(prev => ({ ...prev, vehicle_image: '' }));
       setVehicleImage(file);
       const reader = new FileReader();
       reader.onload = (e) => setPreviewImage(e.target.result);
@@ -67,8 +254,26 @@ const AddVehiclePage = () => {
   const handleRcBookUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      const error = validateRcBookFile(file);
+      if (error) {
+        setErrors(prev => ({ ...prev, rc_book: error }));
+        showToast(error, 'error');
+        return;
+      }
+
+      setErrors(prev => ({ ...prev, rc_book: '' }));
       setRcBook(file);
     }
+  };
+
+  // Handle make selection from dropdown
+  const handleMakeSelect = (make) => {
+    setFormData(prev => ({ ...prev, make }));
+    setShowMakeDropdown(false);
+    setTouched(prev => ({ ...prev, make: true }));
+
+    const error = validateField('make', make);
+    setErrors(prev => ({ ...prev, make: error }));
   };
 
   const processOCR = async () => {
@@ -105,15 +310,32 @@ const AddVehiclePage = () => {
 
   const applyOcrData = () => {
     if (ocrData) {
-      setFormData(prev => ({
-        ...prev,
-        registration_number: ocrData.registration_number || prev.registration_number,
-        chassis_number: ocrData.chassis_number || prev.chassis_number,
-        owner_name: ocrData.owner_name || prev.owner_name,
-        make: ocrData.vehicle_make || prev.make,
-        model: ocrData.vehicle_model || prev.model,
-        year: ocrData.vehicle_year || prev.year
-      }));
+      const updatedData = {
+        ...formData,
+        registration_number: ocrData.registration_number || formData.registration_number,
+        chassis_number: ocrData.chassis_number || formData.chassis_number,
+        owner_name: ocrData.owner_name || formData.owner_name,
+        make: ocrData.vehicle_make || formData.make,
+        model: ocrData.vehicle_model || formData.model,
+        year: ocrData.vehicle_year || formData.year
+      };
+
+      setFormData(updatedData);
+
+      // Mark fields as touched and validate them
+      const fieldsToValidate = ['registration_number', 'chassis_number', 'owner_name', 'make', 'model', 'year'];
+      const newTouched = { ...touched };
+      const newErrors = { ...errors };
+
+      fieldsToValidate.forEach(field => {
+        if (updatedData[field]) {
+          newTouched[field] = true;
+          newErrors[field] = validateField(field, updatedData[field]);
+        }
+      });
+
+      setTouched(newTouched);
+      setErrors(newErrors);
       setShowOcrModal(false);
       showToast('OCR data applied successfully', 'success');
     }
@@ -121,6 +343,13 @@ const AddVehiclePage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Check subscription limits before proceeding
+    if (subscriptionData && subscriptionData.can_add_vehicle === false) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -154,12 +383,12 @@ const AddVehiclePage = () => {
           model: '',
           year: '',
           registration_number: '',
-          vehicle_type: 'sedan',
-          label_id: '',
           chassis_number: '',
           owner_name: '',
           status: 'available'
         });
+        setErrors({});
+        setTouched({});
         setVehicleImage(null);
         setRcBook(null);
         setPreviewImage(null);
@@ -250,16 +479,39 @@ const AddVehiclePage = () => {
     },
   ];
 
-  const vehicleTypes = [
-    { value: 'sedan', label: 'Sedan' },
-    { value: 'suv', label: 'SUV' },
-    { value: 'hatchback', label: 'Hatchback' },
-    { value: 'truck', label: 'Truck' },
-    { value: 'bus', label: 'Bus' },
-    { value: 'van', label: 'Van' },
-    { value: 'motorcycle', label: 'Motorcycle' },
-    { value: 'other', label: 'Other' }
-  ];
+  // Check if form is valid
+  const isFormValid = useMemo(() => {
+    const requiredFields = ['make', 'model', 'year', 'registration_number', 'chassis_number', 'owner_name'];
+
+    // Check if all required fields are filled and have no errors
+    const allFieldsFilled = requiredFields.every(field => formData[field]?.toString().trim());
+    const noErrors = requiredFields.every(field => !errors[field]);
+    const noFileErrors = !errors.vehicle_image && !errors.rc_book;
+
+    return allFieldsFilled && noErrors && noFileErrors;
+  }, [formData, errors]);
+
+
+
+  // Error message component
+  const ErrorMessage = ({ error }) => (
+    <AnimatePresence>
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+          className="text-red-400 text-sm mt-1 flex items-center"
+        >
+          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          {error}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   return (
     <DashboardLayout title="Add Vehicle" sidebarItems={sidebarItems}>
@@ -288,20 +540,67 @@ const AddVehiclePage = () => {
           <DashboardCard title="Vehicle Information" className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+                <div className="relative">
                   <label htmlFor="make" className="block text-sm font-medium text-gray-300 mb-2">
                     Make *
                   </label>
-                  <input
-                    type="text"
-                    name="make"
-                    id="make"
-                    value={formData.make}
-                    onChange={handleInputChange}
-                    className="enterprise-input w-full"
-                    placeholder="e.g., Toyota"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="make"
+                      id="make"
+                      value={formData.make}
+                      onChange={handleInputChange}
+                      onFocus={() => {
+                        if (carMakes.length === 0) fetchCarMakes();
+                        if (formData.make && filteredMakes.length > 0) {
+                          setShowMakeDropdown(true);
+                        }
+                      }}
+                      onBlur={() => {
+                        // Delay hiding dropdown to allow selection
+                        setTimeout(() => setShowMakeDropdown(false), 200);
+                      }}
+                      className={`enterprise-input w-full ${
+                        touched.make && errors.make ? 'border-red-500' : ''
+                      }`}
+                      placeholder="e.g., Toyota"
+                      required
+                    />
+                    {makesLoading && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full"
+                        />
+                      </div>
+                    )}
+
+                    {/* Make dropdown */}
+                    <AnimatePresence>
+                      {showMakeDropdown && filteredMakes.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+                        >
+                          {filteredMakes.slice(0, 10).map((make, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => handleMakeSelect(make)}
+                              className="w-full text-left px-4 py-2 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors"
+                            >
+                              {make}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <ErrorMessage error={touched.make ? errors.make : ''} />
                 </div>
                 <div>
                   <label htmlFor="model" className="block text-sm font-medium text-gray-300 mb-2">
@@ -313,10 +612,13 @@ const AddVehiclePage = () => {
                     id="model"
                     value={formData.model}
                     onChange={handleInputChange}
-                    className="enterprise-input w-full"
+                    className={`enterprise-input w-full ${
+                      touched.model && errors.model ? 'border-red-500' : ''
+                    }`}
                     placeholder="e.g., Camry"
                     required
                   />
+                  <ErrorMessage error={touched.model ? errors.model : ''} />
                 </div>
               </div>
 
@@ -331,32 +633,17 @@ const AddVehiclePage = () => {
                     id="year"
                     value={formData.year}
                     onChange={handleInputChange}
-                    className="enterprise-input w-full"
+                    className={`enterprise-input w-full ${
+                      touched.year && errors.year ? 'border-red-500' : ''
+                    }`}
                     placeholder="e.g., 2020"
-                    min="1900"
-                    max="2030"
+                    min="1980"
+                    max={new Date().getFullYear()}
                     required
                   />
+                  <ErrorMessage error={touched.year ? errors.year : ''} />
                 </div>
-                <div>
-                  <label htmlFor="vehicle_type" className="block text-sm font-medium text-gray-300 mb-2">
-                    Vehicle Type *
-                  </label>
-                  <select
-                    name="vehicle_type"
-                    id="vehicle_type"
-                    value={formData.vehicle_type}
-                    onChange={handleInputChange}
-                    className="enterprise-input w-full"
-                    required
-                  >
-                    {vehicleTypes.map(type => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -370,14 +657,22 @@ const AddVehiclePage = () => {
                     id="registration_number"
                     value={formData.registration_number}
                     onChange={handleInputChange}
-                    className="enterprise-input w-full"
+                    onInput={(e) => {
+                      // Auto-uppercase for registration number
+                      e.target.value = e.target.value.toUpperCase();
+                    }}
+                    className={`enterprise-input w-full ${
+                      touched.registration_number && errors.registration_number ? 'border-red-500' : ''
+                    }`}
                     placeholder="e.g., KA01AB1234"
+                    maxLength="10"
                     required
                   />
+                  <ErrorMessage error={touched.registration_number ? errors.registration_number : ''} />
                 </div>
                 <div>
                   <label htmlFor="chassis_number" className="block text-sm font-medium text-gray-300 mb-2">
-                    Chassis Number
+                    Chassis Number *
                   </label>
                   <input
                     type="text"
@@ -385,15 +680,24 @@ const AddVehiclePage = () => {
                     id="chassis_number"
                     value={formData.chassis_number}
                     onChange={handleInputChange}
-                    className="enterprise-input w-full"
+                    onInput={(e) => {
+                      // Auto-uppercase for chassis number
+                      e.target.value = e.target.value.toUpperCase();
+                    }}
+                    className={`enterprise-input w-full ${
+                      touched.chassis_number && errors.chassis_number ? 'border-red-500' : ''
+                    }`}
                     placeholder="e.g., CHASSIS123456789"
+                    maxLength="20"
+                    required
                   />
+                  <ErrorMessage error={touched.chassis_number ? errors.chassis_number : ''} />
                 </div>
               </div>
 
               <div>
                 <label htmlFor="owner_name" className="block text-sm font-medium text-gray-300 mb-2">
-                  Owner Name
+                  Owner Name *
                 </label>
                 <input
                   type="text"
@@ -401,47 +705,30 @@ const AddVehiclePage = () => {
                   id="owner_name"
                   value={formData.owner_name}
                   onChange={handleInputChange}
-                  className="enterprise-input w-full"
+                  className={`enterprise-input w-full ${
+                    touched.owner_name && errors.owner_name ? 'border-red-500' : ''
+                  }`}
                   placeholder="e.g., John Doe"
+                  required
                 />
+                <ErrorMessage error={touched.owner_name ? errors.owner_name : ''} />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="label_id" className="block text-sm font-medium text-gray-300 mb-2">
-                    Vehicle Label
-                  </label>
-                  <select
-                    name="label_id"
-                    id="label_id"
-                    value={formData.label_id}
-                    onChange={handleInputChange}
-                    className="enterprise-input w-full"
-                  >
-                    <option value="">Select a label (optional)</option>
-                    {labels.map(label => (
-                      <option key={label.id} value={label.id}>
-                        {label.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-300 mb-2">
-                    Status
-                  </label>
-                  <select
-                    name="status"
-                    id="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    className="enterprise-input w-full"
-                  >
-                    <option value="available">Available</option>
-                    <option value="under_maintenance">Under Maintenance</option>
-                    <option value="unavailable">Unavailable</option>
-                  </select>
-                </div>
+              <div>
+                <label htmlFor="status" className="block text-sm font-medium text-gray-300 mb-2">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  id="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  className="enterprise-input w-full"
+                >
+                  <option value="available">Available</option>
+                  <option value="under_maintenance">Under Maintenance</option>
+                  <option value="unavailable">Unavailable</option>
+                </select>
               </div>
 
               <div className="space-y-6">
@@ -453,18 +740,29 @@ const AddVehiclePage = () => {
                     type="file"
                     name="vehicle_image"
                     id="vehicle_image"
-                    accept="image/*"
+                    accept="image/jpeg,image/jpg,image/png"
                     onChange={handleImageUpload}
-                    className="enterprise-input w-full"
+                    className={`enterprise-input w-full ${
+                      errors.vehicle_image ? 'border-red-500' : ''
+                    }`}
                   />
+                  <div className="text-xs text-gray-400 mt-1">
+                    Only JPG and PNG files under 5MB are allowed
+                  </div>
+                  <ErrorMessage error={errors.vehicle_image} />
+
                   {previewImage && (
-                    <div className="mt-4">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="mt-4"
+                    >
                       <img
                         src={previewImage}
                         alt="Vehicle preview"
                         className="w-32 h-32 object-cover rounded-lg border border-gray-600"
                       />
-                    </div>
+                    </motion.div>
                   )}
                 </div>
 
@@ -473,14 +771,22 @@ const AddVehiclePage = () => {
                     RC Book (PDF/Image)
                   </label>
                   <div className="flex space-x-4">
-                    <input
-                      type="file"
-                      name="rc_book"
-                      id="rc_book"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={handleRcBookUpload}
-                      className="enterprise-input flex-1"
-                    />
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        name="rc_book"
+                        id="rc_book"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={handleRcBookUpload}
+                        className={`enterprise-input w-full ${
+                          errors.rc_book ? 'border-red-500' : ''
+                        }`}
+                      />
+                      <div className="text-xs text-gray-400 mt-1">
+                        PDF, JPG, or PNG files under 10MB
+                      </div>
+                      <ErrorMessage error={errors.rc_book} />
+                    </div>
                     <button
                       type="button"
                       onClick={processOCR}
@@ -490,6 +796,18 @@ const AddVehiclePage = () => {
                       {ocrLoading ? 'Processing...' : 'Extract Data'}
                     </button>
                   </div>
+                  {rcBook && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-2 text-sm text-green-400 flex items-center"
+                    >
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      File uploaded: {rcBook.name}
+                    </motion.div>
+                  )}
                 </div>
               </div>
 
@@ -503,12 +821,31 @@ const AddVehiclePage = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="enterprise-button px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={loading || !isFormValid}
+                  className={`enterprise-button px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${
+                    !isFormValid ? 'bg-gray-600 hover:bg-gray-600' : ''
+                  }`}
+                  title={!isFormValid ? 'Please fill all required fields correctly' : ''}
                 >
                   {loading ? 'Adding Vehicle...' : 'Add Vehicle'}
                 </button>
               </div>
+
+              {/* Form validation summary */}
+              {Object.keys(touched).length > 0 && !isFormValid && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 p-4 bg-red-900/20 border border-red-500/30 rounded-lg"
+                >
+                  <div className="flex items-center text-red-400 text-sm">
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    Please correct the errors above before submitting
+                  </div>
+                </motion.div>
+              )}
             </form>
           </DashboardCard>
         </div>
@@ -598,6 +935,14 @@ const AddVehiclePage = () => {
         confirmText="Apply Data"
         cancelText="Cancel"
         confirmButtonClass="bg-primary hover:bg-primary/80 text-black"
+      />
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        currentCount={subscriptionData?.current_count || 0}
+        vehicleLimit={subscriptionData?.vehicle_limit || 5}
       />
     </DashboardLayout>
   );

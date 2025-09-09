@@ -5,6 +5,19 @@ import { useToast } from '../../contexts/ToastContext';
 import DashboardLayout from '../../components/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, CreditCard, Truck, MapPin, Check, Car, Bike, Zap } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+
+// Create supabase client directly in this component as a fallback
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://gkuyixfyyjyxznbtxble.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrdXlpeGZ5eWp5eHpuYnR4YmxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDU2NTcsImV4cCI6MjA3MDQyMTY1N30.orqqieiI1NUc7Yb_7Jca_hV2x2tAb-_mAReXiQTuFQ4';
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+});
 
 const DriverProfilePage = () => {
   // Profile sections state

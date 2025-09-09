@@ -15,6 +15,8 @@ import AddVehiclePage from './pages/business/AddVehiclePage'
 import ManageLabelsPage from './pages/business/ManageLabelsPage'
 import ViewVehiclesPage from './pages/business/ViewVehiclesPage'
 import DriverManagementPage from './pages/business/DriverManagementPage'
+import SubscriptionPlansPage from './pages/business/SubscriptionPlansPage'
+import PaymentPage from './pages/business/PaymentPage'
 
 // Import context providers
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -141,6 +143,22 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute allowedRoles={['business']}>
               <DriverManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/business/subscription"
+          element={
+            <ProtectedRoute allowedRoles={['business']}>
+              <SubscriptionPlansPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/business/payment"
+          element={
+            <ProtectedRoute allowedRoles={['business']}>
+              <PaymentPage />
             </ProtectedRoute>
           }
         />

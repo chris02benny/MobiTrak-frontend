@@ -5,6 +5,12 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import {
+  Route,
+  CheckCircle,
+  DollarSign,
+  Star
+} from 'lucide-react'
 
 const DriverDashboard = () => {
   const [profileData, setProfileData] = useState(null)
@@ -130,7 +136,7 @@ const DriverDashboard = () => {
           title="Today's Trips"
           value="5"
           subtitle="Scheduled for today"
-          icon="🛣️"
+          icon={<Route className="w-6 h-6" />}
           trend="neutral"
           trendValue="Same as yesterday"
         />
@@ -138,7 +144,7 @@ const DriverDashboard = () => {
           title="Completed"
           value="3"
           subtitle="Trips finished"
-          icon="✅"
+          icon={<CheckCircle className="w-6 h-6" />}
           trend="up"
           trendValue="+1"
         />
@@ -146,7 +152,7 @@ const DriverDashboard = () => {
           title="Earnings Today"
           value="$245"
           subtitle="Total earned"
-          icon="💰"
+          icon={<DollarSign className="w-6 h-6" />}
           trend="up"
           trendValue="+15%"
         />
@@ -154,7 +160,7 @@ const DriverDashboard = () => {
           title="Rating"
           value="4.9"
           subtitle="Customer rating"
-          icon="⭐"
+          icon={<Star className="w-6 h-6" />}
           trend="up"
           trendValue="+0.1"
         />

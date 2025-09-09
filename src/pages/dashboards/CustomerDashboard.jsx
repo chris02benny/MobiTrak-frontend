@@ -1,6 +1,16 @@
 import React from 'react'
 import DashboardLayout from '../../components/DashboardLayout'
 import DashboardCard from '../../components/DashboardCard'
+import {
+  Car,
+  Clipboard,
+  TrendingUp,
+  MapPin,
+  Star,
+  Phone,
+  BarChart3,
+  Trophy
+} from 'lucide-react'
 
 const CustomerDashboard = () => {
   const sidebarItems = [
@@ -67,14 +77,14 @@ const CustomerDashboard = () => {
         <DashboardCard
           title="Book New Ride"
           subtitle="Quick booking"
-          icon="🚗"
+          icon={<Car className="w-6 h-6" />}
           className="bg-primary/10 border-primary/30 hover:bg-primary/20"
         />
         <DashboardCard
           title="Active Bookings"
           value="2"
           subtitle="Current trips"
-          icon="📋"
+          icon={<Clipboard className="w-6 h-6" />}
           trend="neutral"
           trendValue="2 pending"
         />
@@ -82,7 +92,7 @@ const CustomerDashboard = () => {
           title="Total Trips"
           value="47"
           subtitle="All time"
-          icon="📈"
+          icon={<TrendingUp className="w-6 h-6" />}
           trend="up"
           trendValue="+3 this month"
         />
@@ -90,7 +100,7 @@ const CustomerDashboard = () => {
           title="Saved Locations"
           value="5"
           subtitle="Favorite places"
-          icon="📍"
+          icon={<MapPin className="w-6 h-6" />}
         />
       </div>
 
@@ -106,8 +116,12 @@ const CustomerDashboard = () => {
             <div>
               <h4 className="font-semibold text-green-400 mb-2">Driver</h4>
               <p className="text-sm text-gray-300">John Doe</p>
-              <p className="text-sm text-gray-300">⭐ 4.9 rating</p>
-              <p className="text-sm text-gray-300">📞 (555) 987-6543</p>
+              <p className="text-sm text-gray-300 flex items-center gap-1">
+                <Star className="w-4 h-4 text-yellow-400" /> 4.9 rating
+              </p>
+              <p className="text-sm text-gray-300 flex items-center gap-1">
+                <Phone className="w-4 h-4" /> (555) 987-6543
+              </p>
             </div>
             <div>
               <h4 className="font-semibold text-green-400 mb-2">Status</h4>
@@ -189,7 +203,7 @@ const CustomerDashboard = () => {
         <DashboardCard
           title="Monthly Summary"
           subtitle="This month's activity"
-          icon="📊"
+          icon={<BarChart3 className="w-6 h-6" />}
         >
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
@@ -210,7 +224,7 @@ const CustomerDashboard = () => {
         <DashboardCard
           title="Favorite Routes"
           subtitle="Most used destinations"
-          icon="📍"
+          icon={<MapPin className="w-6 h-6" />}
         >
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
@@ -231,7 +245,7 @@ const CustomerDashboard = () => {
         <DashboardCard
           title="Loyalty Status"
           subtitle="Rewards & benefits"
-          icon="🏆"
+          icon={<Trophy className="w-6 h-6" />}
         >
           <div className="text-center">
             <div className="text-lg font-bold text-primary mb-2">Gold Member</div>

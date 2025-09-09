@@ -3,28 +3,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
-import { 
-  Menu, 
-  X, 
-  User, 
-  Settings, 
-  LogOut, 
-  Home, 
-  Car, 
-  Users, 
-  BarChart3, 
-  MapPin, 
+import {
+  Menu,
+  X,
+  User,
+  Settings,
+  LogOut,
+  Home,
+  Car,
+  Users,
+  BarChart3,
+  MapPin,
   Calendar,
   CreditCard,
   Truck,
   Phone,
   Info,
-  ExternalLink
+  ExternalLink,
+  Crown
 } from 'lucide-react';
 
 const ResponsiveNavbar = ({ title = "mobiTrak" }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
   const { user, userRole, signOut } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -52,6 +54,18 @@ const ResponsiveNavbar = ({ title = "mobiTrak" }) => {
     setIsSidebarOpen(false);
   }, [location.pathname]);
 
+  // Recalculate dropdown position on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (isProfileDropdownOpen) {
+        calculateDropdownPosition();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isProfileDropdownOpen]);
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -63,11 +77,25 @@ const ResponsiveNavbar = ({ title = "mobiTrak" }) => {
     setIsProfileDropdownOpen(false);
   };
 
+  const calculateDropdownPosition = () => {
+    if (profileRef.current) {
+      const rect = profileRef.current.getBoundingClientRect();
+      const scrollY = window.scrollY;
+      setDropdownPosition({
+        top: rect.bottom + scrollY + 8, // 8px gap below button
+        right: window.innerWidth - rect.right, // Align right edge with button
+      });
+    }
+  };
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
   const toggleProfileDropdown = () => {
+    if (!isProfileDropdownOpen) {
+      calculateDropdownPosition();
+    }
     setIsProfileDropdownOpen(!isProfileDropdownOpen);
   };
 
@@ -110,6 +138,14 @@ const ResponsiveNavbar = ({ title = "mobiTrak" }) => {
           description: 'View business analytics',
           onClick: () => showToast('Analytics coming soon!', 'info'),
           highlighted: false
+        },
+        {
+          id: 'subscription',
+          title: 'Upgrade Plan',
+          icon: Crown,
+          description: 'Manage your subscription',
+          onClick: () => navigate('/business/subscription'),
+          highlighted: true
         }
       ];
     }
@@ -212,121 +248,143 @@ const ResponsiveNavbar = ({ title = "mobiTrak" }) => {
   return (
     <>
       {/* Navbar */}
-      <nav className="fixed top-0 w-full z-50 p-3">
+      <nav className="fixed top-0 w-full z-50 px-4 py-2">
         <div className="max-w-7xl mx-auto">
-          <div className="enterprise-navbar rounded-2xl shadow-lg border border-gray-600/50 backdrop-blur-md">
-            <div className="px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center"
-            >
-              <span className="text-2xl font-bold text-primary">mobiTrak</span>
-            </motion.div>
-
-            {/* Desktop Navigation Items */}
-            <div className="hidden md:flex items-center space-x-8">
-              {user && (
-                <>
-                  <button
-                    onClick={() => navigate(`/dashboard/${userRole}`)}
-                    className="text-gray-300 hover:text-white transition-colors"
-                  >
-                    Dashboard
-                  </button>
-                  <button
-                    onClick={() => navigate('/profile')}
-                    className="text-gray-300 hover:text-white transition-colors"
-                  >
-                    Profile
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Right side items */}
-            <div className="flex items-center space-x-4">
-              {user ? (
-                <>
-                  {/* Profile dropdown for desktop */}
-                  <div className="hidden md:block relative" ref={profileRef}>
-                    <button 
-                      onClick={toggleProfileDropdown}
-                      className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
-                    >
-                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-black font-semibold text-sm">
-                        {user?.email?.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="text-sm">{user?.email?.split('@')[0]}</span>
-                    </button>
-
-                    <AnimatePresence>
-                      {isProfileDropdownOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="absolute right-0 mt-2 w-48 enterprise-card rounded-lg shadow-lg z-[9999]"
-                        >
-                          <div className="py-2">
-                            <button
-                              onClick={() => {
-                                navigate('/profile');
-                                setIsProfileDropdownOpen(false);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-primary hover:text-black transition-colors flex items-center space-x-2"
-                            >
-                              <User size={16} />
-                              <span>Profile</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                showToast('Settings coming soon!', 'info');
-                                setIsProfileDropdownOpen(false);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-primary hover:text-black transition-colors flex items-center space-x-2"
-                            >
-                              <Settings size={16} />
-                              <span>Settings</span>
-                            </button>
-                            <hr className="my-1 border-gray-600" />
-                            <button
-                              onClick={handleSignOut}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-red-600 hover:text-white transition-colors flex items-center space-x-2"
-                            >
-                              <LogOut size={16} />
-                              <span>Sign Out</span>
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Hamburger menu button */}
-                  <button
-                    onClick={toggleSidebar}
-                    className="p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-200"
-                    aria-label="Open menu"
-                  >
-                    <Menu size={24} />
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => navigate('/login')}
-                  className="enterprise-button"
+          <div className="enterprise-navbar rounded-2xl shadow-lg border border-gray-600/50 backdrop-blur-md overflow-hidden">
+            <div className="px-4 sm:px-6 lg:px-8 relative rounded-2xl">
+              <div className="flex justify-between items-center h-14">
+                {/* Logo */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex items-center"
                 >
-                  Login
-                </button>
-              )}
+                  <span className="text-2xl font-bold text-primary">mobiTrak</span>
+                </motion.div>
+
+                {/* Desktop Navigation Items - Removed Dashboard and Profile */}
+                <div className="hidden md:flex items-center space-x-8">
+                  {/* Navigation items removed as requested */}
+                </div>
+
+                {/* Right side items */}
+                <div className="flex items-center space-x-4">
+                  {user ? (
+                    <>
+                      {/* Upgrade button for business users */}
+                      {userRole === 'business' && (
+                        <motion.button
+                          onClick={() => navigate('/business/subscription')}
+                          className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-primary to-yellow-400 text-black px-4 py-2 rounded-lg font-semibold hover:from-yellow-400 hover:to-primary transition-all duration-300 shadow-lg hover:shadow-xl"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Crown className="w-4 h-4" />
+                          <span>Upgrade</span>
+                        </motion.button>
+                      )}
+                      {/* Profile dropdown for desktop */}
+                      <div className="hidden md:block relative z-50" ref={profileRef}>
+                        <button
+                          onClick={toggleProfileDropdown}
+                          className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
+                        >
+                          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-black font-semibold text-sm">
+                            {user?.email?.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-sm">{user?.email?.split('@')[0]}</span>
+                        </button>
+
+                        {/* Dropdown will be rendered outside navbar */}
+                      </div>
+
+                      {/* Mobile Upgrade button for business users */}
+                      {userRole === 'business' && (
+                        <motion.button
+                          onClick={() => navigate('/business/subscription')}
+                          className="md:hidden p-2 bg-gradient-to-r from-primary to-yellow-400 text-black rounded-lg hover:from-yellow-400 hover:to-primary transition-all duration-300"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          aria-label="Upgrade Plan"
+                        >
+                          <Crown size={20} />
+                        </motion.button>
+                      )}
+
+                      {/* Hamburger menu button */}
+                      <button
+                        onClick={toggleSidebar}
+                        className="p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-200"
+                        aria-label="Open menu"
+                      >
+                        <Menu size={24} />
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => navigate('/login')}
+                      className="enterprise-button"
+                    >
+                      Login
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </nav>
+
+      {/* Profile Dropdown - Outside navbar to avoid clipping */}
+      <AnimatePresence>
+        {isProfileDropdownOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="profile-dropdown fixed w-48 enterprise-card rounded-lg shadow-xl border border-gray-600/50 z-[99999]"
+            style={{
+              zIndex: 99999,
+              top: `${dropdownPosition.top}px`,
+              right: `${dropdownPosition.right}px`,
+            }}
+          >
+            <div className="py-2">
+              <button
+                onClick={() => {
+                  navigate('/profile');
+                  setIsProfileDropdownOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-primary hover:text-black transition-colors flex items-center space-x-2"
+              >
+                <User size={16} />
+                <span>Profile</span>
+              </button>
+              <button
+                onClick={() => {
+                  showToast('Settings coming soon!', 'info');
+                  setIsProfileDropdownOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-primary hover:text-black transition-colors flex items-center space-x-2"
+              >
+                <Settings size={16} />
+                <span>Settings</span>
+              </button>
+              <hr className="my-1 border-gray-600" />
+              <button
+                onClick={() => {
+                  handleSignOut();
+                  setIsProfileDropdownOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-red-600 hover:text-white transition-colors flex items-center space-x-2"
+              >
+                <LogOut size={16} />
+                <span>Logout</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Sidebar Overlay */}
       <AnimatePresence>
@@ -388,15 +446,28 @@ const ResponsiveNavbar = ({ title = "mobiTrak" }) => {
                       <button
                         key={item.id}
                         onClick={item.onClick}
-                        className="w-full flex items-center space-x-3 p-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-all duration-200 group"
+                        className={`w-full flex items-center space-x-3 p-3 text-left rounded-lg transition-all duration-200 group ${
+                          item.highlighted
+                            ? 'bg-gradient-to-r from-primary/20 to-yellow-400/20 text-white border border-primary/30 hover:from-primary/30 hover:to-yellow-400/30'
+                            : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                        }`}
                       >
-                        <div className="p-2 bg-gray-700 rounded-lg group-hover:bg-gray-600 transition-colors">
-                          <item.icon size={20} className="group-hover:text-primary transition-colors" />
+                        <div className={`p-2 rounded-lg transition-colors ${
+                          item.highlighted
+                            ? 'bg-gradient-to-r from-primary to-yellow-400 text-black'
+                            : 'bg-gray-700 group-hover:bg-gray-600'
+                        }`}>
+                          <item.icon size={20} className={item.highlighted ? '' : 'group-hover:text-primary transition-colors'} />
                         </div>
                         <div>
-                          <p className="font-medium">{item.title}</p>
-                          <p className="text-xs text-gray-500">{item.description}</p>
+                          <p className={`font-medium ${item.highlighted ? 'text-white' : ''}`}>{item.title}</p>
+                          <p className={`text-xs ${item.highlighted ? 'text-gray-200' : 'text-gray-500'}`}>{item.description}</p>
                         </div>
+                        {item.highlighted && (
+                          <div className="ml-auto">
+                            <Crown className="w-4 h-4 text-primary" />
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>

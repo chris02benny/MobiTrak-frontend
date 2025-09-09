@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 const DashboardCard = ({ 
   title, 
@@ -38,14 +39,14 @@ const DashboardCard = ({
 
       {trend && trendValue && (
         <div className="flex items-center">
-          <span className={`text-sm font-medium ${
-            trend === 'up' ? 'text-green-400' : 
-            trend === 'down' ? 'text-red-400' : 
+          <span className={`text-sm font-medium flex items-center gap-1 ${
+            trend === 'up' ? 'text-green-400' :
+            trend === 'down' ? 'text-red-400' :
             'text-gray-400'
           }`}>
-            {trend === 'up' && '↗'} 
-            {trend === 'down' && '↘'} 
-            {trend === 'neutral' && '→'} 
+            {trend === 'up' && <TrendingUp className="w-4 h-4" />}
+            {trend === 'down' && <TrendingDown className="w-4 h-4" />}
+            {trend === 'neutral' && <Minus className="w-4 h-4" />}
             {trendValue}
           </span>
           <span className="text-xs text-gray-500 ml-2">vs last month</span>

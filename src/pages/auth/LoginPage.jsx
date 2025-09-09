@@ -4,7 +4,6 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import ConfirmationModal from '../../components/ConfirmationModal'
-import ResponsiveLayout from '../../components/ResponsiveLayout'
 
 const LoginPage = () => {
   const [email, setEmail] = useState('')
@@ -76,7 +75,7 @@ const LoginPage = () => {
   }
 
   return (
-    <ResponsiveLayout>
+    <div className="min-h-screen bg-bgBlack text-white">
       <ConfirmationModal
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
@@ -86,7 +85,7 @@ const LoginPage = () => {
         confirmText="Resend Email"
         loading={loading}
       />
-      <div className="min-h-[calc(100vh-6rem)] flex items-center justify-center px-4 py-8 relative overflow-hidden">
+      <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden">
         {/* Background Elements */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5"></div>
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float"></div>
@@ -229,7 +228,7 @@ const LoginPage = () => {
           </motion.div>
         </motion.div>
       </div>
-    </ResponsiveLayout>
+    </div>
   )
 }
 

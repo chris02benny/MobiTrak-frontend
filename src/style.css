@@ -65,9 +65,10 @@ body {
 }
 
 .enterprise-navbar {
-  @apply bg-gray-900/95 border border-gray-700/50;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  @apply bg-white/10 border border-white/20;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .enterprise-hero {
@@ -88,6 +89,7 @@ body {
 .enterprise-navbar {
   position: relative;
   overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .enterprise-navbar::before {
@@ -97,8 +99,36 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(250, 187, 36, 0.1) 0%, rgba(250, 187, 36, 0.05) 100%);
+  background: linear-gradient(135deg,
+    rgba(31, 41, 55, 0.8) 0%,
+    rgba(17, 24, 39, 0.9) 50%,
+    rgba(31, 41, 55, 0.8) 100%);
   pointer-events: none;
+  z-index: -1;
+}
+
+.enterprise-navbar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(250, 187, 36, 0.05) 0%, rgba(250, 187, 36, 0.02) 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Navbar hover effects */
+.enterprise-navbar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Navbar content styling */
+.enterprise-navbar .navbar-content {
+  position: relative;
+  z-index: 10;
 }
 
 /* Smooth transitions for mobile menu */
@@ -139,4 +169,23 @@ body {
 @keyframes glow {
   from { box-shadow: 0 0 20px rgba(250, 187, 36, 0.3); }
   to { box-shadow: 0 0 30px rgba(250, 187, 36, 0.6); }
+}
+
+/* Profile dropdown visibility fix */
+.profile-dropdown {
+  position: fixed !important;
+  z-index: 99999 !important;
+  background: rgba(31, 41, 55, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(107, 114, 128, 0.5) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Ensure navbar content respects rounded corners */
+.enterprise-navbar * {
+  border-radius: inherit;
+}
+
+.enterprise-navbar > div {
+  border-radius: 1rem; /* 16px to match rounded-2xl */
 }

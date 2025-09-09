@@ -148,3 +148,4 @@ The mobiTrak application now features a professional, enterprise-level design th
 - Is suitable for business environments
 
 The application maintains its dark theme and brand colors while providing a clean, professional interface that users will find both attractive and functional.
+
