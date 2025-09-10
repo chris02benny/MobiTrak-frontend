@@ -171,6 +171,67 @@ body {
   to { box-shadow: 0 0 30px rgba(250, 187, 36, 0.6); }
 }
 
+/* Modern button hover effects */
+.enterprise-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(250, 187, 36, 0.3);
+}
+
+.enterprise-button-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(107, 114, 128, 0.3);
+}
+
+/* Card hover effects */
+.enterprise-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Smooth transitions for all interactive elements */
+.enterprise-button,
+.enterprise-button-secondary,
+.enterprise-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(135deg, #fabb24 0%, #facc4d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Pulse animation for accent elements */
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Slide in animations */
+.slide-in-left {
+  animation: slideInLeft 0.8s ease-out;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.8s ease-out;
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
 /* Profile dropdown visibility fix */
 .profile-dropdown {
   position: fixed !important;
