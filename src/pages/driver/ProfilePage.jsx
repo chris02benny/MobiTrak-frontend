@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import DashboardLayout from '../../components/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, CreditCard, Truck, MapPin, Check, Car, Bike, Zap } from 'lucide-react';
+import { User, CreditCard, Truck, MapPin, Check, Car, Bike, Zap, Upload, FileText } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import ocrService from '../../services/ocrService';
 
 // Create supabase client directly in this component as a fallback
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://gkuyixfyyjyxznbtxble.supabase.co';
@@ -41,8 +42,12 @@ const DriverProfilePage = () => {
       completed: false,
       data: {
         license_number: '',
-        issue_date: '',
-        validity_nt: ''
+        license_issue_date: '',
+        license_valid_till: '',
+        dl_front: null,
+        dl_back: null,
+        dl_front_url: '',
+        dl_back_url: ''
       }
     },
     vehicle: {
@@ -51,7 +56,7 @@ const DriverProfilePage = () => {
       icon: Truck,
       completed: false,
       data: {
-        license_class: []
+        vehicle_classes: []
       }
     },
     address: {
@@ -60,13 +65,19 @@ const DriverProfilePage = () => {
       icon: MapPin,
       completed: false,
       data: {
-        address: ''
+        address_line1: '',
+        address_line2: '',
+        city: '',
+        state: '',
+        postal_code: '',
+        post_office_name: ''
       }
     }
   });
 
   const [expandedSection, setExpandedSection] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const { supabase, user } = useAuth();
   const navigate = useNavigate();
@@ -92,11 +103,11 @@ const DriverProfilePage = () => {
       case 'personal':
         return data.full_name && data.date_of_birth && data.blood_group && data.phone;
       case 'license':
-        return data.license_number && data.issue_date && data.validity_nt;
+        return data.license_number && data.license_issue_date && data.license_valid_till && data.dl_front_url && data.dl_back_url;
       case 'vehicle':
-        return data.license_class && data.license_class.length > 0;
+        return data.vehicle_classes && data.vehicle_classes.length > 0;
       case 'address':
-        return data.address && data.address.length >= 10;
+        return data.address_line1 && data.city && data.state && data.postal_code;
       default:
         return false;
     }
@@ -135,23 +146,25 @@ const DriverProfilePage = () => {
 
       case 'license':
         if (!data.license_number?.trim()) newErrors.license_number = 'License number is required';
-        else if (!/^[A-Z]{2}\d{13}$/.test(data.license_number.replace(/\s/g, ''))) {
-          newErrors.license_number = 'Invalid license format (e.g., KL212019002353T)';
-        }
-        if (!data.issue_date) newErrors.issue_date = 'Issue date is required';
-        if (!data.validity_nt) newErrors.validity_nt = 'Validity date is required';
+        if (!data.license_issue_date) newErrors.license_issue_date = 'Issue date is required';
+        if (!data.license_valid_till) newErrors.license_valid_till = 'Validity date is required';
+        if (!data.dl_front_url && !data.dl_front) newErrors.dl_front = 'Driving license front is required';
+        if (!data.dl_back_url && !data.dl_back) newErrors.dl_back = 'Driving license back is required';
         break;
 
       case 'vehicle':
-        if (!data.license_class || data.license_class.length === 0) {
-          newErrors.license_class = 'Please select at least one vehicle class';
+        if (!data.vehicle_classes || data.vehicle_classes.length === 0) {
+          newErrors.vehicle_classes = 'Please select at least one vehicle class';
         }
         break;
 
       case 'address':
-        if (!data.address?.trim()) newErrors.address = 'Address is required';
-        else if (data.address.trim().length < 10) {
-          newErrors.address = 'Please provide a complete address';
+        if (!data.address_line1?.trim()) newErrors.address_line1 = 'Address Line 1 is required';
+        if (!data.city?.trim()) newErrors.city = 'City is required';
+        if (!data.state?.trim()) newErrors.state = 'State is required';
+        if (!data.postal_code?.trim()) newErrors.postal_code = 'Postal code is required';
+        else if (!/^\d{6}$/.test(data.postal_code)) {
+            newErrors.postal_code = 'Invalid postal code (must be 6 digits)';
         }
         break;
     }
@@ -183,32 +196,39 @@ const DriverProfilePage = () => {
               full_name: data.full_name || '',
               date_of_birth: data.date_of_birth || '',
               blood_group: data.blood_group || '',
-              phone: data.phone || ''
+              phone: data.phone_number || ''
             },
-            completed: !!(data.full_name && data.date_of_birth && data.blood_group && data.phone)
+            completed: !!(data.full_name && data.date_of_birth && data.blood_group && data.phone_number)
           },
           license: {
             ...prev.license,
             data: {
               license_number: data.license_number || '',
-              issue_date: data.issue_date || '',
-              validity_nt: data.validity_nt || ''
+              license_issue_date: data.license_issue_date || '',
+              license_valid_till: data.license_valid_till || '',
+              dl_front_url: data.dl_front_url || '',
+              dl_back_url: data.dl_back_url || '',
             },
-            completed: !!(data.license_number && data.issue_date && data.validity_nt)
+            completed: !!(data.license_number && data.license_issue_date && data.license_valid_till && data.dl_front_url && data.dl_back_url)
           },
           vehicle: {
             ...prev.vehicle,
             data: {
-              license_class: data.license_class ? (Array.isArray(data.license_class) ? data.license_class : [data.license_class]) : []
+              vehicle_classes: data.vehicle_classes ? (Array.isArray(data.vehicle_classes) ? data.vehicle_classes : [data.vehicle_classes]) : []
             },
-            completed: !!(data.license_class && (Array.isArray(data.license_class) ? data.license_class.length > 0 : true))
+            completed: !!(data.vehicle_classes && (Array.isArray(data.vehicle_classes) ? data.vehicle_classes.length > 0 : true))
           },
           address: {
             ...prev.address,
             data: {
-              address: data.address || ''
+              address_line1: data.address_line1 || '',
+              address_line2: data.address_line2 || '',
+              city: data.city || '',
+              state: data.state || '',
+              postal_code: data.postal_code || '',
+              post_office_name: data.post_office_name || ''
             },
-            completed: !!(data.address && data.address.length >= 10)
+            completed: !!(data.address_line1 && data.city && data.state && data.postal_code)
           }
         }));
       } else {
@@ -233,6 +253,71 @@ const DriverProfilePage = () => {
     fetchProfile();
   }, [fetchProfile]);
 
+  const handleFileUpload = async (file) => {
+    if (!file) return null;
+
+    const fileName = `${user.id}/${Date.now()}_${file.name}`;
+    const { data, error } = await supabase.storage
+      .from('driver-licenses')
+      .upload(fileName, file);
+
+    if (error) {
+      console.error('Error uploading file:', error);
+      showToast('Failed to upload file', 'error');
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('driver-licenses').getPublicUrl(fileName);
+    return publicUrl;
+  };
+
+  const handleOcr = async (providedFile) => {
+    const file = providedFile || profileSections.license.data.dl_front;
+    if (!file) {
+      showToast('Please select a front license image first.', 'warning');
+      return;
+    }
+
+    setOcrLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const response = await ocrService.extractLicenseInfo(formData);
+      if (response && response.licenseNumber) {
+        updateSectionData('license', { license_number: response.licenseNumber });
+        showToast('License number extracted successfully!', 'success');
+      } else {
+        showToast('Could not extract license number. Please enter it manually.', 'error');
+      }
+    } catch (error) {
+      console.error('OCR Error:', error);
+      showToast('An error occurred during OCR.', 'error');
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+  
+  const fetchCityAndState = async (postalCode) => {
+    if (postalCode.length === 6) {
+        setLoading(true);
+        try {
+            const response = await fetch(`https://api.postalpincode.in/pincode/${postalCode}`);
+            const data = await response.json();
+            if (data && data[0].Status === 'Success') {
+                const postOffice = data[0].PostOffice[0];
+                updateSectionData('address', { city: postOffice.District, state: postOffice.State, post_office_name: postOffice.Name });
+            } else {
+                showToast('Invalid postal code', 'error');
+            }
+        } catch (error) {
+            console.error('Error fetching postal code data:', error);
+            showToast('Failed to fetch address details', 'error');
+        } finally {
+            setLoading(false);
+        }
+    }
+  };
+
   // Handle section form submission
   const handleSectionSubmit = async (sectionId) => {
     const section = profileSections[sectionId];
@@ -248,16 +333,32 @@ const DriverProfilePage = () => {
       setLoading(true);
       setErrors({});
 
-      // Prepare data for database
       const updateData = {
         user_id: user.id,
         updated_at: new Date().toISOString()
       };
 
+      if (sectionId === 'license') {
+        if (section.data.dl_front && !section.data.dl_front_url) {
+            updateData.dl_front_url = await handleFileUpload(section.data.dl_front);
+        }
+        if (section.data.dl_back && !section.data.dl_back_url) {
+            updateData.dl_back_url = await handleFileUpload(section.data.dl_back);
+        }
+      }
+
       // Add section-specific data
       Object.keys(section.data).forEach(key => {
-        updateData[key] = section.data[key];
+        if (key !== 'dl_front' && key !== 'dl_back') {
+            updateData[key] = section.data[key];
+        }
       });
+      
+      if (sectionId === 'personal') {
+        updateData.phone_number = updateData.phone;
+        delete updateData.phone;
+      }
+
 
       const { error } = await supabase
         .from('driver_profiles')
@@ -275,6 +376,7 @@ const DriverProfilePage = () => {
       updateSectionData(sectionId, section.data);
       setExpandedSection(null);
       showToast(`${section.title} saved successfully!`, 'success');
+      fetchProfile();
 
     } catch (error) {
       console.error('Error saving section:', error);
@@ -339,51 +441,6 @@ const DriverProfilePage = () => {
     {
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      ),
-      label: 'My Trips',
-      onClick: () => {}
-    },
-    {
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-2 2m8-2l2 2m-2-2v10a2 2 0 01-2 2H8a2 2 0 01-2-2V9a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H8a2 2 0 01-2-2V9z" />
-        </svg>
-      ),
-      label: 'Schedule',
-      onClick: () => {}
-    },
-    {
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      ),
-      label: 'Performance',
-      onClick: () => {}
-    },
-    {
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      label: 'Vehicle Status',
-      onClick: () => {}
-    },
-    {
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-        </svg>
-      ),
-      label: 'Earnings',
-      onClick: () => {}
-    },
-    {
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       ),
@@ -391,6 +448,64 @@ const DriverProfilePage = () => {
       onClick: () => {} // Current page
     },
   ];
+
+  const FileUploadField = ({ field, label, error, onFileSelect, file, previewUrl }) => {
+    const [internalPreview, setInternalPreview] = useState(null);
+
+    const handleFileChange = (e) => {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            if (selectedFile.size > 5 * 1024 * 1024) {
+                setErrors(prev => ({ ...prev, [field]: 'File size must be less than 5MB' }));
+                return;
+            }
+            const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+            if (!allowedTypes.includes(selectedFile.type)) {
+                setErrors(prev => ({ ...prev, [field]: 'Invalid file type. Only JPG, PNG, and PDF are allowed.' }));
+                return;
+            }
+            setErrors(prev => ({ ...prev, [field]: '' }));
+            onFileSelect(field, selectedFile);
+
+            if (selectedFile.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setInternalPreview(reader.result);
+                };
+                reader.readAsDataURL(selectedFile);
+            } else {
+                setInternalPreview(null);
+            }
+        }
+    };
+
+    return (
+        <div>
+            <label className="block text-gray-300 text-sm font-bold mb-2">{label} *</label>
+            <div className="flex items-center space-x-4">
+                <label htmlFor={field} className="cursor-pointer enterprise-button-secondary px-4 py-2 flex items-center space-x-2">
+                    <Upload size={16} />
+                    <span>{file ? 'Change File' : 'Upload File'}</span>
+                </label>
+                <input id={field} type="file" className="hidden" onChange={handleFileChange} accept=".jpg,.jpeg,.png,.pdf" />
+                {file && <span className="text-gray-400 text-sm">{file.name}</span>}
+            </div>
+            {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+            {(internalPreview || previewUrl) && (
+                <div className="mt-4">
+                    { (internalPreview || (previewUrl && previewUrl.match(/\.(jpeg|jpg|png|gif)$/i))) ?
+                        <img src={internalPreview || previewUrl} alt="Preview" className="w-32 h-32 object-cover rounded-lg" />
+                        :
+                        <div className="w-32 h-32 bg-gray-700 rounded-lg flex flex-col items-center justify-center">
+                            <FileText size={32} className="text-gray-400" />
+                            <span className="text-xs text-gray-400 mt-2">PDF Document</span>
+                        </div>
+                    }
+                </div>
+            )}
+        </div>
+    );
+  };
 
   // Render form for each section
   const renderSectionForm = (section) => {
@@ -403,11 +518,11 @@ const DriverProfilePage = () => {
     };
 
     const handleVehicleClassToggle = (classId) => {
-      const currentClasses = section.data.license_class || [];
+      const currentClasses = section.data.vehicle_classes || [];
       const newClasses = currentClasses.includes(classId)
         ? currentClasses.filter(c => c !== classId)
         : [...currentClasses, classId];
-      updateSectionData(section.id, { license_class: newClasses });
+      updateSectionData(section.id, { vehicle_classes: newClasses });
     };
 
     switch (section.id) {
@@ -480,7 +595,7 @@ const DriverProfilePage = () => {
           <div className="space-y-4">
             <h4 className="text-lg font-semibold text-white mb-4">Driving License Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-gray-300 text-sm font-bold mb-2">License Number *</label>
                 <input
                   type="text"
@@ -495,31 +610,49 @@ const DriverProfilePage = () => {
                 <label className="block text-gray-300 text-sm font-bold mb-2">Issue Date *</label>
                 <input
                   type="date"
-                  className={`enterprise-input w-full ${errors.issue_date ? 'border-red-500' : ''}`}
-                  value={section.data.issue_date || ''}
-                  onChange={(e) => handleInputChange('issue_date', e.target.value)}
+                  className={`enterprise-input w-full ${errors.license_issue_date ? 'border-red-500' : ''}`}
+                  value={section.data.license_issue_date || ''}
+                  onChange={(e) => handleInputChange('license_issue_date', e.target.value)}
                 />
-                {errors.issue_date && <p className="text-red-400 text-xs mt-1">{errors.issue_date}</p>}
+                {errors.license_issue_date && <p className="text-red-400 text-xs mt-1">{errors.license_issue_date}</p>}
               </div>
               <div>
                 <label className="block text-gray-300 text-sm font-bold mb-2">Valid Till *</label>
                 <input
                   type="date"
-                  className={`enterprise-input w-full ${errors.validity_nt ? 'border-red-500' : ''}`}
-                  value={section.data.validity_nt || ''}
-                  onChange={(e) => handleInputChange('validity_nt', e.target.value)}
+                  className={`enterprise-input w-full ${errors.license_valid_till ? 'border-red-500' : ''}`}
+                  value={section.data.license_valid_till || ''}
+                  onChange={(e) => handleInputChange('license_valid_till', e.target.value)}
                 />
-                {errors.validity_nt && <p className="text-red-400 text-xs mt-1">{errors.validity_nt}</p>}
+                {errors.license_valid_till && <p className="text-red-400 text-xs mt-1">{errors.license_valid_till}</p>}
               </div>
             </div>
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => handleSectionSubmit(section.id)}
-                disabled={loading}
-                className="enterprise-button px-6 py-2"
-              >
-                {loading ? 'Saving...' : 'Save License Details'}
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <FileUploadField
+                    field="dl_front"
+                    label="Driving License Front"
+                    error={errors.dl_front}
+                    onFileSelect={(field, file) => { updateSectionData('license', { [field]: file }); handleOcr(file); }}
+                    file={section.data.dl_front}
+                    previewUrl={section.data.dl_front_url}
+                />
+                <FileUploadField
+                    field="dl_back"
+                    label="Driving License Back"
+                    error={errors.dl_back}
+                    onFileSelect={(field, file) => updateSectionData('license', { [field]: file })}
+                    file={section.data.dl_back}
+                    previewUrl={section.data.dl_back_url}
+                />
+            </div>
+            <div className="flex justify-end items-center mt-6">
+                <button
+                    onClick={() => handleSectionSubmit(section.id)}
+                    disabled={loading}
+                    className="enterprise-button px-6 py-2"
+                >
+                    {loading ? 'Saving...' : 'Save License Details'}
+                </button>
             </div>
           </div>
         );
@@ -535,7 +668,7 @@ const DriverProfilePage = () => {
                   key={option.id}
                   onClick={() => handleVehicleClassToggle(option.id)}
                   className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                    (section.data.license_class || []).includes(option.id)
+                    (section.data.vehicle_classes || []).includes(option.id)
                       ? 'border-primary bg-primary/10'
                       : 'border-gray-600 hover:border-gray-500'
                   }`}
@@ -545,7 +678,7 @@ const DriverProfilePage = () => {
                       whileHover={{ scale: 1.1 }}
                       transition={{ duration: 0.2 }}
                       className={`p-2 rounded-lg transition-colors ${
-                        (section.data.license_class || []).includes(option.id)
+                        (section.data.vehicle_classes || []).includes(option.id)
                           ? 'bg-primary/20 text-primary'
                           : 'bg-gray-700/50 text-gray-300'
                       }`}
@@ -557,7 +690,7 @@ const DriverProfilePage = () => {
                       <h5 className="font-semibold text-white">{option.label}</h5>
                       <p className="text-sm text-gray-400">{option.description}</p>
                     </div>
-                    {(section.data.license_class || []).includes(option.id) && (
+                    {(section.data.vehicle_classes || []).includes(option.id) && (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
@@ -575,7 +708,7 @@ const DriverProfilePage = () => {
                 </div>
               ))}
             </div>
-            {errors.license_class && <p className="text-red-400 text-xs mt-1">{errors.license_class}</p>}
+            {errors.vehicle_classes && <p className="text-red-400 text-xs mt-1">{errors.vehicle_classes}</p>}
             <div className="flex justify-end mt-6">
               <button
                 onClick={() => handleSectionSubmit(section.id)}
@@ -592,17 +725,73 @@ const DriverProfilePage = () => {
         return (
           <div className="space-y-4">
             <h4 className="text-lg font-semibold text-white mb-4">Address Information</h4>
-            <div>
-              <label className="block text-gray-300 text-sm font-bold mb-2">Complete Address *</label>
-              <textarea
-                rows={4}
-                className={`enterprise-input w-full ${errors.address ? 'border-red-500' : ''}`}
-                value={section.data.address || ''}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="Enter your complete address including house number, street, area, city, state, and PIN code"
-              />
-              {errors.address && <p className="text-red-400 text-xs mt-1">{errors.address}</p>}
-              <p className="text-xs text-gray-500 mt-1">Minimum 10 characters required</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                    <label className="block text-gray-300 text-sm font-bold mb-2">Address Line 1 *</label>
+                    <input
+                        type="text"
+                        className={`enterprise-input w-full ${errors.address_line1 ? 'border-red-500' : ''}`}
+                        value={section.data.address_line1 || ''}
+                        onChange={(e) => handleInputChange('address_line1', e.target.value)}
+                        placeholder="House No, Building, Street"
+                    />
+                    {errors.address_line1 && <p className="text-red-400 text-xs mt-1">{errors.address_line1}</p>}
+                </div>
+                <div className="md:col-span-2">
+                    <label className="block text-gray-300 text-sm font-bold mb-2">Address Line 2</label>
+                    <input
+                        type="text"
+                        className="enterprise-input w-full"
+                        value={section.data.address_line2 || ''}
+                        onChange={(e) => handleInputChange('address_line2', e.target.value)}
+                        placeholder="Area, Landmark"
+                    />
+                </div>
+                <div>
+                    <label className="block text-gray-300 text-sm font-bold mb-2">Postal Code *</label>
+                    <input
+                        type="text"
+                        className={`enterprise-input w-full ${errors.postal_code ? 'border-red-500' : ''}`}
+                        value={section.data.postal_code || ''}
+                        onChange={(e) => handleInputChange('postal_code', e.target.value)}
+                        onBlur={(e) => fetchCityAndState(e.target.value)}
+                        placeholder="6-digit PIN code"
+                        maxLength={6}
+                    />
+                    {errors.postal_code && <p className="text-red-400 text-xs mt-1">{errors.postal_code}</p>}
+                </div>
+                <div>
+                    <label className="block text-gray-300 text-sm font-bold mb-2">Post Office</label>
+                    <input
+                        type="text"
+                        className="enterprise-input w-full"
+                        value={section.data.post_office_name || ''}
+                        onChange={(e) => handleInputChange('post_office_name', e.target.value)}
+                        placeholder="Auto-filled from PIN"
+                    />
+                </div>
+                <div>
+                    <label className="block text-gray-300 text-sm font-bold mb-2">City *</label>
+                    <input
+                        type="text"
+                        className={`enterprise-input w-full ${errors.city ? 'border-red-500' : ''}`}
+                        value={section.data.city || ''}
+                        onChange={(e) => handleInputChange('city', e.target.value)}
+                        placeholder="City"
+                    />
+                    {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
+                </div>
+                <div>
+                    <label className="block text-gray-300 text-sm font-bold mb-2">State *</label>
+                    <input
+                        type="text"
+                        className={`enterprise-input w-full ${errors.state ? 'border-red-500' : ''}`}
+                        value={section.data.state || ''}
+                        onChange={(e) => handleInputChange('state', e.target.value)}
+                        placeholder="State"
+                    />
+                    {errors.state && <p className="text-red-400 text-xs mt-1">{errors.state}</p>}
+                </div>
             </div>
             <div className="flex justify-end mt-6">
               <button
