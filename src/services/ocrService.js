@@ -618,11 +618,17 @@ class OCRService {
         }
       }
 
-      // Extract Issue Date
+      // Extract Issue Date (may appear on next line)
       if (!licenseData.issue_date && upperLine.includes('ISSUE DATE')) {
         const issueMatch = line.match(/(\d{2}[-\/]\d{2}[-\/]\d{4})/);
         if (issueMatch) {
           licenseData.issue_date = this.standardizeDate(issueMatch[1]);
+        } else if (nextLine) {
+          const nextIssueMatch = nextLine.match(/(\d{2}[-\/]\d{2}[-\/]\d{4})/);
+          if (nextIssueMatch) {
+            licenseData.issue_date = this.standardizeDate(nextIssueMatch[1]);
+            console.log('✅ Issue Date found on next line:', licenseData.issue_date);
+          }
         }
       }
 
@@ -636,12 +642,24 @@ class OCRService {
             licenseData.validity_nt = this.standardizeDate(validityMatch[1]);
             console.log('✅ Validity NT found on same line:', licenseData.validity_nt);
           }
-          // Check next line for dates (format: "30-12-2019 15-06-2038")
+          // Check next line for dates; may contain two dates (Issue Date and Validity NT)
           else if (nextLine) {
-            const nextValidityMatch = nextLine.match(/(\d{2}[-\/]\d{2}[-\/]\d{4})/);
-            if (nextValidityMatch) {
-              licenseData.validity_nt = this.standardizeDate(nextValidityMatch[1]);
-              console.log('✅ Validity NT found on next line:', licenseData.validity_nt);
+            const twoDates = nextLine.match(/(\d{2}[-\/]\d{2}[-\/]\d{4})\s+(\d{2}[-\/]\d{2}[-\/]\d{4})/);
+            if (twoDates) {
+              const d1 = this.standardizeDate(twoDates[1]);
+              const d2 = this.standardizeDate(twoDates[2]);
+              if (!licenseData.issue_date) {
+                licenseData.issue_date = d1;
+                console.log('✅ Issue Date inferred from two-date line:', licenseData.issue_date);
+              }
+              licenseData.validity_nt = d2;
+              console.log('✅ Validity NT inferred from two-date line:', licenseData.validity_nt);
+            } else {
+              const nextValidityMatch = nextLine.match(/(\d{2}[-\/]\d{2}[-\/]\d{4})/);
+              if (nextValidityMatch) {
+                licenseData.validity_nt = this.standardizeDate(nextValidityMatch[1]);
+                console.log('✅ Validity NT found on next line:', licenseData.validity_nt);
+              }
             }
           }
         }
@@ -673,6 +691,14 @@ class OCRService {
           if (!licenseData.validity_tr) {
             licenseData.validity_tr = this.standardizeDate(multipleDates[1]); // First date might be TR validity
             console.log('✅ Validity TR found in multi-date line:', licenseData.validity_tr);
+          }
+        }
+        // Sometimes only a single date is present below Validity (NT)
+        if (!licenseData.validity_nt && upperLine.includes('VALIDITY') && nextLine) {
+          const singleDate = nextLine.match(/(\d{2}[-\/]\d{2}[-\/]\d{4})/);
+          if (singleDate) {
+            licenseData.validity_nt = this.standardizeDate(singleDate[1]);
+            console.log('✅ Validity NT found on next line after header:', licenseData.validity_nt);
           }
         }
       }
@@ -927,10 +953,24 @@ class OCRService {
    */
   standardizeDate(dateStr) {
     try {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return dateStr;
-      
-      return date.toISOString().split('T')[0];
+      if (!dateStr) return '';
+      const trimmed = String(dateStr).trim();
+      // Handle DD-MM-YYYY or DD/MM/YYYY
+      const dmy = trimmed.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/);
+      if (dmy) {
+        const [_, dd, mm, yyyy] = dmy;
+        return `${yyyy}-${mm}-${dd}`;
+      }
+      // Handle YYYY-MM-DD already standardized
+      const ymd = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (ymd) return trimmed;
+
+      // Fallback to Date parsing
+      const date = new Date(trimmed);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+      return trimmed;
     } catch {
       return dateStr;
     }
@@ -1073,7 +1113,9 @@ class OCRService {
    * Validate date format
    */
   isValidDate(dateStr) {
-    const date = new Date(dateStr);
+    if (!dateStr) return false;
+    const std = this.standardizeDate(dateStr);
+    const date = new Date(std);
     return !isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2100;
   }
 

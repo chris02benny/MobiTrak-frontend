@@ -4,21 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import DashboardLayout from '../../components/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, CreditCard, Truck, MapPin, Check, Car, Bike, Zap, Upload, FileText } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { User, CreditCard, Truck, MapPin, Check, Car, Bike, Zap, Upload, FileText, Loader2 } from 'lucide-react';
+import { supabase } from '../../utils/supabase';
 import ocrService from '../../services/ocrService';
 
-// Create supabase client directly in this component as a fallback
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://gkuyixfyyjyxznbtxble.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrdXlpeGZ5eWp5eHpuYnR4YmxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDU2NTcsImV4cCI6MjA3MDQyMTY1N30.orqqieiI1NUc7Yb_7Jca_hV2x2tAb-_mAReXiQTuFQ4';
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-});
+// Using shared Supabase client from utils to avoid multiple instances
 
 const DriverProfilePage = () => {
   // Profile sections state
@@ -79,7 +69,7 @@ const DriverProfilePage = () => {
   const [loading, setLoading] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const { supabase, user } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -181,9 +171,9 @@ const DriverProfilePage = () => {
         .from('driver_profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         throw error;
       }
 
@@ -280,18 +270,36 @@ const DriverProfilePage = () => {
 
     setOcrLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      const response = await ocrService.extractLicenseInfo(formData);
-      if (response && response.licenseNumber) {
-        updateSectionData('license', { license_number: response.licenseNumber });
-        showToast('License number extracted successfully!', 'success');
+      // Prefer image uploads for best OCR results
+      const result = await ocrService.processLicenseFile(file);
+
+      if (result) {
+        const updates = {};
+        if (result.license_number) updates.license_number = result.license_number.toUpperCase();
+        if (result.issue_date) updates.license_issue_date = result.issue_date;
+        if (result.expiry_date || result.validity_nt || result.validity_tr) {
+          updates.license_valid_till = result.expiry_date || result.validity_nt || result.validity_tr;
+        }
+        // Optionally fill personal data from OCR when empty
+        if (!profileSections.personal.data.full_name && result.full_name) {
+          updateSectionData('personal', { full_name: result.full_name });
+        }
+        if (!profileSections.personal.data.date_of_birth && result.date_of_birth) {
+          updateSectionData('personal', { date_of_birth: result.date_of_birth });
+        }
+
+        if (Object.keys(updates).length > 0) {
+          updateSectionData('license', updates);
+          showToast('License info extracted successfully!', 'success');
+        } else {
+          showToast('Could not extract license number. Please enter it manually.', 'error');
+        }
       } else {
         showToast('Could not extract license number. Please enter it manually.', 'error');
       }
     } catch (error) {
       console.error('OCR Error:', error);
-      showToast('An error occurred during OCR.', 'error');
+      showToast(error.message || 'An error occurred during OCR.', 'error');
     } finally {
       setOcrLoading(false);
     }
@@ -451,57 +459,100 @@ const DriverProfilePage = () => {
 
   const FileUploadField = ({ field, label, error, onFileSelect, file, previewUrl }) => {
     const [internalPreview, setInternalPreview] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    const processSelectedFile = (selectedFile) => {
+      if (!selectedFile) return;
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, [field]: 'File size must be less than 5MB' }));
+        return;
+      }
+      const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+      if (!allowedTypes.includes(selectedFile.type)) {
+        setErrors(prev => ({ ...prev, [field]: 'Invalid file type. Only JPG, PNG, and PDF are allowed.' }));
+        return;
+      }
+      setErrors(prev => ({ ...prev, [field]: '' }));
+      onFileSelect(field, selectedFile);
+
+      if (selectedFile.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setInternalPreview(reader.result);
+        };
+        reader.readAsDataURL(selectedFile);
+      } else {
+        setInternalPreview(null);
+      }
+    };
 
     const handleFileChange = (e) => {
-        const selectedFile = e.target.files[0];
-        if (selectedFile) {
-            if (selectedFile.size > 5 * 1024 * 1024) {
-                setErrors(prev => ({ ...prev, [field]: 'File size must be less than 5MB' }));
-                return;
-            }
-            const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-            if (!allowedTypes.includes(selectedFile.type)) {
-                setErrors(prev => ({ ...prev, [field]: 'Invalid file type. Only JPG, PNG, and PDF are allowed.' }));
-                return;
-            }
-            setErrors(prev => ({ ...prev, [field]: '' }));
-            onFileSelect(field, selectedFile);
+      const selectedFile = e.target.files[0];
+      processSelectedFile(selectedFile);
+    };
 
-            if (selectedFile.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setInternalPreview(reader.result);
-                };
-                reader.readAsDataURL(selectedFile);
-            } else {
-                setInternalPreview(null);
-            }
-        }
+    const handleDragOver = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      const droppedFile = e.dataTransfer.files?.[0];
+      processSelectedFile(droppedFile);
     };
 
     return (
         <div>
             <label className="block text-gray-300 text-sm font-bold mb-2">{label} *</label>
-            <div className="flex items-center space-x-4">
-                <label htmlFor={field} className="cursor-pointer enterprise-button-secondary px-4 py-2 flex items-center space-x-2">
-                    <Upload size={16} />
-                    <span>{file ? 'Change File' : 'Upload File'}</span>
-                </label>
-                <input id={field} type="file" className="hidden" onChange={handleFileChange} accept=".jpg,.jpeg,.png,.pdf" />
-                {file && <span className="text-gray-400 text-sm">{file.name}</span>}
+            <div
+              className={`border-2 ${isDragging ? 'border-primary/70' : 'border-dashed border-gray-600'} rounded-lg p-4 bg-gray-800/40 transition-colors`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <label htmlFor={field} className="w-full cursor-pointer flex flex-col items-center justify-center py-6">
+                <div className="flex flex-row items-center gap-3">
+                  {field === 'dl_front' && ocrLoading ? (
+                    <Loader2 size={28} className="animate-spin text-primary" />
+                  ) : (
+                    <Upload size={28} className="text-gray-300" />
+                  )}
+                  <span className="text-sm text-gray-300">Drag and drop file to upload</span>
+                </div>
+                <div className="flex flex-row items-center gap-2 mt-2">
+                  <span className="text-xs text-gray-500">or</span>
+                  <span className="enterprise-button-secondary px-4 py-1 text-sm">Browse</span>
+                </div>
+                <span className="mt-2 text-xs text-gray-500">Supported: JPG, PNG, PDF</span>
+                {field === 'dl_front' && (
+                  <span className="mt-1 text-[11px] text-gray-400">Image processing recommended for best OCR results</span>
+                )}
+              </label>
+              <input id={field} type="file" className="hidden" onChange={handleFileChange} accept=".jpg,.jpeg,.png,.pdf" />
+              {file && <div className="mt-3 text-gray-400 text-sm truncate">{file.name}</div>}
             </div>
             {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
             {(internalPreview || previewUrl) && (
-                <div className="mt-4">
-                    { (internalPreview || (previewUrl && previewUrl.match(/\.(jpeg|jpg|png|gif)$/i))) ?
-                        <img src={internalPreview || previewUrl} alt="Preview" className="w-32 h-32 object-cover rounded-lg" />
-                        :
-                        <div className="w-32 h-32 bg-gray-700 rounded-lg flex flex-col items-center justify-center">
-                            <FileText size={32} className="text-gray-400" />
-                            <span className="text-xs text-gray-400 mt-2">PDF Document</span>
-                        </div>
-                    }
-                </div>
+              <div className="mt-4">
+                {(internalPreview || (previewUrl && previewUrl.match(/\.(jpeg|jpg|png|gif)$/i))) ? (
+                  <img src={internalPreview || previewUrl} alt="Preview" className="w-32 h-32 object-cover rounded-lg" />
+                ) : (
+                  <div className="w-32 h-32 bg-gray-700 rounded-lg flex flex-col items-center justify-center">
+                    <FileText size={32} className="text-gray-400" />
+                    <span className="text-xs text-gray-400 mt-2">PDF Document</span>
+                  </div>
+                )}
+              </div>
             )}
         </div>
     );
@@ -640,7 +691,7 @@ const DriverProfilePage = () => {
                     field="dl_back"
                     label="Driving License Back"
                     error={errors.dl_back}
-                    onFileSelect={(field, file) => updateSectionData('license', { [field]: file })}
+                    onFileSelect={(field, file) => { updateSectionData('license', { [field]: file }); handleOcr(file); }}
                     file={section.data.dl_back}
                     previewUrl={section.data.dl_back_url}
                 />
