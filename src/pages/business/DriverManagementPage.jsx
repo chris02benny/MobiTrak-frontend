@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import DashboardLayout from '../../components/DashboardLayout';
 import DashboardCard from '../../components/DashboardCard';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import { supabase } from '../../utils/supabase';
+import { businessSidebarItems } from '../../config/businessSidebarConfig';
 
 const DriverManagementPage = () => {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
   const { user } = useAuth();
   const { showToast } = useToast();
   
@@ -23,6 +26,9 @@ const DriverManagementPage = () => {
   const [selectedVehicle, setSelectedVehicle] = useState('');
   const [reviews, setReviews] = useState([]);
 
+  // Sort for Driver Pool
+  const [sortBy, setSortBy] = useState('newest'); // newest | rating | trips | experience
+
   useEffect(() => {
     fetchHiredDrivers();
     fetchDriverPool();
@@ -32,7 +38,7 @@ const DriverManagementPage = () => {
 
   const fetchHiredDrivers = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/drivers?business_id=${user.id}`);
+      const response = await fetch(`${API_BASE}/drivers?business_id=${user.id}`);
       const data = await response.json();
       if (response.ok) {
         setHiredDrivers(data.data.filter(driver => driver.user_profiles?.profile_complete));
@@ -47,22 +53,74 @@ const DriverManagementPage = () => {
 
   const fetchDriverPool = async () => {
     try {
-      const response = await fetch('http://localhost:5000/driver-pool');
-      const data = await response.json();
-      if (response.ok) {
-        setDriverPool(data.data);
-      } else {
-        showToast(`Failed to fetch driver pool: ${data.error}`, 'error');
+      setLoading(true);
+      
+      // Fetch only complete driver profiles from Supabase
+      // Fetch driver_profiles first
+      const { data: driverProfilesBase, error: dpError } = await supabase
+        .from('driver_profiles')
+        .select('id, user_id, license_number, full_name, city, state, rating, total_trips, experience_years, is_available_for_hire, profile_complete, created_at')
+        .eq('profile_complete', true)
+        .order('created_at', { ascending: false });
+
+      if (dpError) {
+        throw dpError;
       }
+
+      if (!driverProfilesBase || driverProfilesBase.length === 0) {
+        setDriverPool([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch related user_profiles in one query using IN on user_id
+      const userIds = driverProfilesBase.map(p => p.user_id).filter(Boolean);
+      const { data: users, error: upError } = await supabase
+        .from('user_profiles')
+        .select('id, email, full_name, phone_number')
+        .in('id', userIds);
+
+      if (upError) {
+        throw upError;
+      }
+
+      const userById = new Map((users || []).map(u => [u.id, u]));
+      const driverProfiles = driverProfilesBase.map(profile => ({
+        ...profile,
+        user_profiles: userById.get(profile.user_id) || null,
+      }));
+
+      // Transform data to match expected format
+      const transformedDrivers = driverProfiles.map(profile => ({
+        id: profile.id,
+        user_id: profile.user_id,
+        user_profiles: profile.user_profiles,
+        license_number: profile.license_number,
+        full_name: profile.full_name,
+        city: profile.city,
+        state: profile.state,
+        rating: profile.rating || 0,
+        total_trips: profile.total_trips || 0,
+        experience_years: profile.experience_years || 0,
+        is_available_for_hire: profile.is_available_for_hire,
+        profile_complete: profile.profile_complete,
+        created_at: profile.created_at
+      }));
+
+      setDriverPool(transformedDrivers);
+      console.log(`📋 Found ${transformedDrivers.length} complete drivers available for hire`);
+      
     } catch (error) {
       console.error('Error fetching driver pool:', error);
-      showToast('Error fetching driver pool', 'error');
+      showToast('Error fetching available drivers', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchVehicles = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/vehicles?business_id=${user.id}`);
+      const response = await fetch(`${API_BASE}/vehicles?business_id=${user.id}`);
       const data = await response.json();
       if (response.ok) {
         setVehicles(data.data);
@@ -74,7 +132,7 @@ const DriverManagementPage = () => {
 
   const fetchAssignments = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/assignments?business_id=${user.id}`);
+      const response = await fetch(`${API_BASE}/assignments?business_id=${user.id}`);
       const data = await response.json();
       if (response.ok) {
         setAssignments(data.data);
@@ -86,7 +144,7 @@ const DriverManagementPage = () => {
 
   const fetchDriverReviews = async (driverId) => {
     try {
-      const response = await fetch(`http://localhost:5000/drivers/${driverId}/reviews`);
+      const response = await fetch(`${API_BASE}/drivers/${driverId}/reviews`);
       const data = await response.json();
       if (response.ok) {
         setReviews(data.data);
@@ -105,7 +163,7 @@ const DriverManagementPage = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/drivers/hire', {
+      const response = await fetch(`${API_BASE}/drivers/hire`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,12 +192,27 @@ const DriverManagementPage = () => {
     }
   };
 
+  // Helpers
+  const filteredAndSortedDrivers = useMemo(() => {
+    let list = [...driverPool];
+    if (sortBy === 'rating') {
+      list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    } else if (sortBy === 'trips') {
+      list.sort((a, b) => (b.total_trips || 0) - (a.total_trips || 0));
+    } else if (sortBy === 'experience') {
+      list.sort((a, b) => (b.experience_years || 0) - (a.experience_years || 0));
+    } else {
+      list.sort((a, b) => (new Date(b.created_at || 0)) - (new Date(a.created_at || 0)) || (b.rating || 0) - (a.rating || 0));
+    }
+    return list;
+  }, [driverPool, sortBy]);
+
   const handleAssignDriver = async () => {
     if (!selectedDriver || !selectedVehicle) return;
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/assignments', {
+      const response = await fetch(`${API_BASE}/assignments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +245,7 @@ const DriverManagementPage = () => {
   const handleUnassignDriver = async (assignmentId) => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/assignments/${assignmentId}/unassign`, {
+      const response = await fetch(`${API_BASE}/assignments/${assignmentId}/unassign`, {
         method: 'PUT',
       });
 
@@ -230,84 +303,9 @@ const DriverManagementPage = () => {
     return stars;
   };
 
-  const sidebarItems = [
-    { 
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      ), 
-      label: 'Overview', 
-      onClick: () => window.location.href = '/dashboard/business' 
-    },
-    { 
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-      ), 
-      label: 'Add Vehicle', 
-      onClick: () => window.location.href = '/business/add-vehicle' 
-    },
-    { 
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-        </svg>
-      ), 
-      label: 'View Vehicles', 
-      onClick: () => window.location.href = '/business/vehicles' 
-    },
-    { 
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-        </svg>
-      ), 
-      label: 'Manage Labels', 
-      onClick: () => window.location.href = '/business/labels' 
-    },
-    { 
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-        </svg>
-      ), 
-      label: 'Driver Management', 
-      onClick: () => {} 
-    },
-    { 
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      ), 
-      label: 'Analytics', 
-      onClick: () => {} 
-    },
-    { 
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ), 
-      label: 'Maintenance', 
-      onClick: () => {} 
-    },
-    { 
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ), 
-      label: 'Reports', 
-      onClick: () => {} 
-    },
-  ];
 
   return (
-    <DashboardLayout title="Driver Management" sidebarItems={sidebarItems}>
+    <DashboardLayout title="Driver Management" sidebarItems={businessSidebarItems}>
       <div className="mb-6">
         <nav className="flex" aria-label="Breadcrumb">
           <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -387,7 +385,7 @@ const DriverManagementPage = () => {
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-semibold text-white group-hover:text-primary transition-colors">
-                          {driver.user_profiles?.full_name || 'Unknown Driver'}
+                          {driver.user_profiles?.full_name || driver.full_name || 'Unknown Driver'}
                         </h3>
                         <p className="text-gray-400 text-sm">{driver.user_profiles?.email}</p>
                         <p className="text-gray-400 text-sm">License: {driver.driver_profiles?.license_number}</p>
@@ -473,9 +471,45 @@ const DriverManagementPage = () => {
 
       {/* Driver Pool Tab */}
       {activeTab === 'pool' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div>
+          <div className="mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-white mb-1">Available Drivers</h2>
+                <p className="text-gray-400">Only drivers with complete profiles and uploaded license documents are shown here.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="text-gray-300 text-sm">Sort by:</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="enterprise-input"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="rating">Rating</option>
+                  <option value="trips">Trips</option>
+                  <option value="experience">Experience</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div>
+              {filteredAndSortedDrivers.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <p className="text-lg">No Complete Driver Profiles Available</p>
+                <p className="text-sm mt-2">Drivers need to complete their profiles with license documents to appear here.</p>
+              </div>
+            </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
           <AnimatePresence>
-            {driverPool.map((driver) => (
+            {filteredAndSortedDrivers.map((driver) => (
               <motion.div
                 key={driver.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -485,12 +519,18 @@ const DriverManagementPage = () => {
               >
                 <DashboardCard className="p-6 hover:bg-white/15 transition-all duration-300 group">
                   <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white group-hover:text-primary transition-colors">
-                        {driver.user_profiles?.full_name || 'Unknown Driver'}
-                      </h3>
-                      <p className="text-gray-400 text-sm">{driver.user_profiles?.email}</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white uppercase">
+                        {(driver.user_profiles?.full_name || '?').slice(0,2)}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-white group-hover:text-primary transition-colors">
+                          {driver.user_profiles?.full_name || 'Unknown Driver'}
+                        </h3>
+                        <p className="text-gray-400 text-sm">{driver.city || '-'}, {driver.state || '-'}</p>
+                      </div>
                     </div>
+
                     <button
                       onClick={() => openHireModal(driver)}
                       className="enterprise-button px-4 py-2 text-sm"
@@ -500,29 +540,27 @@ const DriverManagementPage = () => {
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">License:</span>
-                      <span className="text-white">{driver.license_number}</span>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="bg-white/10 text-gray-200 text-xs px-2 py-1 rounded-full">{getLevelFromExperience(driver.experience_years)}</span>
+                      <span className="bg-white/10 text-gray-200 text-xs px-2 py-1 rounded-full">Trips: {driver.total_trips || 0}</span>
+                      <span className="bg-white/10 text-gray-200 text-xs px-2 py-1 rounded-full">Rating: {Number(driver.rating || 0).toFixed(1)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Rating:</span>
-                      <div className="flex items-center space-x-1">
-                        {renderStars(Math.round(driver.rating))}
-                        <span className="text-white ml-1">({driver.rating.toFixed(1)})</span>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-gray-400 block text-xs">License</span>
+                        <span className="text-white font-mono text-sm">{driver.license_number || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block text-xs">Email</span>
+                        <span className="text-white text-sm break-all">{driver.user_profiles?.email || '-'}</span>
                       </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Experience:</span>
-                      <span className="text-white">{driver.experience_years} years</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Trips:</span>
-                      <span className="text-white">{driver.total_trips}</span>
-                    </div>
-                    {driver.phone && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Phone:</span>
-                        <span className="text-white">{driver.phone}</span>
+
+                    {driver.user_profiles?.phone_number && (
+                      <div>
+                        <span className="text-gray-400 block text-xs">Phone</span>
+                        <span className="text-white">{driver.user_profiles.phone_number}</span>
                       </div>
                     )}
                   </div>
@@ -530,6 +568,10 @@ const DriverManagementPage = () => {
               </motion.div>
             ))}
           </AnimatePresence>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

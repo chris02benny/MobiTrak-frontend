@@ -10,7 +10,10 @@ const ConfirmationModal = ({
   confirmText = "Confirm",
   cancelText = "Cancel",
   confirmButtonClass = "bg-red-500 hover:bg-red-600 text-white",
-  loading = false
+  loading = false,
+  disabled = false,
+  maxWidth = "max-w-md",
+  maxHeight = "max-h-96"
 }) => {
   if (!isOpen) return null
 
@@ -31,13 +34,15 @@ const ConfirmationModal = ({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative enterprise-modal p-6 max-w-md w-full mx-4"
+          className={`relative enterprise-modal p-6 ${maxWidth} w-full mx-4 ${maxHeight} overflow-hidden`}
         >
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
-            <p className="text-gray-300 mb-6">{message}</p>
+          <div className="h-full flex flex-col">
+            <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
+            <div className="flex-1 overflow-y-auto">
+              {message}
+            </div>
             
-            <div className="flex space-x-3 justify-center">
+            <div className="flex space-x-3 justify-end mt-6 pt-4 border-t border-gray-600">
               <button
                 onClick={onClose}
                 disabled={loading}
@@ -47,7 +52,7 @@ const ConfirmationModal = ({
               </button>
               <button
                 onClick={onConfirm}
-                disabled={loading}
+                disabled={loading || disabled}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 ${confirmButtonClass}`}
               >
                 {loading ? (

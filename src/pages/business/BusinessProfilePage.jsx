@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import DashboardLayout from '../../components/DashboardLayout';
 import { motion } from 'framer-motion';
+import { businessSidebarItems } from '../../config/businessSidebarConfig';
 
 const BusinessProfilePage = () => {
   const [companyName, setCompanyName] = useState('');
@@ -96,30 +97,9 @@ const BusinessProfilePage = () => {
     }
   };
 
-  // Sidebar items for business dashboard
-  const sidebarItems = [
-    { 
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      ), 
-      label: 'Dashboard', 
-      onClick: () => navigate('/dashboard/business')
-    },
-    { 
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-      ),
-      label: 'Business Profile',
-      onClick: () => {} // Current page
-    },
-  ];
 
   return (
-    <DashboardLayout title="Business Profile" sidebarItems={sidebarItems}>
+    <DashboardLayout title="Business Profile" sidebarItems={businessSidebarItems}>
       <div className="max-w-4xl mx-auto">
         {/* Profile Header */}
         <div className="enterprise-card p-6 mb-8">

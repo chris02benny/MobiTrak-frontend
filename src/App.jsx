@@ -11,10 +11,10 @@ import DriverDashboard from './pages/dashboards/DriverDashboard'
 import CustomerDashboard from './pages/dashboards/CustomerDashboard'
 import ProfilePage from './pages/ProfilePage'
 import DriverProfilePage from './pages/driver/ProfilePage'
-import AddVehiclePage from './pages/business/AddVehiclePage'
+import VehiclesPage from './pages/business/VehiclesPage'
 import ManageLabelsPage from './pages/business/ManageLabelsPage'
-import ViewVehiclesPage from './pages/business/ViewVehiclesPage'
 import DriverManagementPage from './pages/business/DriverManagementPage'
+import HireDriversPage from './pages/business/HireDriversPage'
 import SubscriptionPlansPage from './pages/business/SubscriptionPlansPage'
 import PaymentPage from './pages/business/PaymentPage'
 
@@ -115,10 +115,28 @@ const AppRoutes = () => {
 
         {/* Business Feature Routes */}
         <Route
+          path="/business/vehicles"
+          element={
+            <ProtectedRoute allowedRoles={['business']}>
+              <VehiclesPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Redirect old add-vehicle route to new vehicles page */}
+        <Route
           path="/business/add-vehicle"
           element={
             <ProtectedRoute allowedRoles={['business']}>
-              <AddVehiclePage />
+              <VehiclesPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Redirect old vehicles/add route to new vehicles page */}
+        <Route
+          path="/business/vehicles/add"
+          element={
+            <ProtectedRoute allowedRoles={['business']}>
+              <VehiclesPage />
             </ProtectedRoute>
           }
         />
@@ -131,18 +149,18 @@ const AppRoutes = () => {
           }
         />
         <Route
-          path="/business/vehicles"
-          element={
-            <ProtectedRoute allowedRoles={['business']}>
-              <ViewVehiclesPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/business/drivers"
           element={
             <ProtectedRoute allowedRoles={['business']}>
               <DriverManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/business/hire-drivers"
+          element={
+            <ProtectedRoute allowedRoles={['business']}>
+              <HireDriversPage />
             </ProtectedRoute>
           }
         />
