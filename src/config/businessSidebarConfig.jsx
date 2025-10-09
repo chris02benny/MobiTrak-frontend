@@ -14,6 +14,19 @@ export const businessSidebarItems = [
     onClick: () => window.location.href = '/dashboard/business' 
   },
   { 
+    id: 'profile',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A9 9 0 1119.78 3.146 9 9 0 015.12 17.804z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 10-6 0 3 3 0 006 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6.5 19a6.5 6.5 0 0111 0" />
+      </svg>
+    ), 
+    label: 'Profile', 
+    path: '/business/profile',
+    onClick: () => window.location.href = '/business/profile' 
+  },
+  { 
     id: 'vehicles',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

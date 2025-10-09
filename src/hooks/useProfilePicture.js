@@ -59,6 +59,7 @@ export const useProfilePicture = () => {
           
           const displayName = data.full_name || 
                              (data.first_name && data.last_name ? `${data.first_name} ${data.last_name}` : data.first_name || data.last_name) ||
+                             data.business_name ||
                              data.company_name || 
                              user.email?.split('@')[0];
           
@@ -101,7 +102,7 @@ export const useProfilePicture = () => {
           if (payload.new) {
             setProfilePicture({
               url: payload.new.profile_picture_url,
-              name: payload.new.full_name || payload.new.first_name || payload.new.last_name || payload.new.company_name || user.email?.split('@')[0]
+              name: payload.new.full_name || payload.new.first_name || payload.new.last_name || payload.new.business_name || payload.new.company_name || user.email?.split('@')[0]
             });
           }
         }

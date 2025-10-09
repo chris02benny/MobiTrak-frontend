@@ -202,12 +202,21 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (role = null) => {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo: `${window.location.origin}/`,
+          ...(role && {
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
+            data: {
+              role: role
+            }
+          })
         }
       })
       return { data, error }

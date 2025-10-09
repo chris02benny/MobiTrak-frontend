@@ -11,6 +11,8 @@ import DriverDashboard from './pages/dashboards/DriverDashboard'
 import CustomerDashboard from './pages/dashboards/CustomerDashboard'
 import ProfilePage from './pages/ProfilePage'
 import DriverProfilePage from './pages/driver/ProfilePage'
+import JobOffersPage from './pages/driver/JobOffersPage'
+import BusinessProfilePage from './pages/business/BusinessProfilePage'
 import VehiclesPage from './pages/business/VehiclesPage'
 import ManageLabelsPage from './pages/business/ManageLabelsPage'
 import DriverManagementPage from './pages/business/DriverManagementPage'
@@ -181,6 +183,14 @@ const AppRoutes = () => {
           }
         />
         <Route
+          path="/business/profile"
+          element={
+            <ProtectedRoute allowedRoles={['business']}>
+              <BusinessProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/profile"
           element={
             <ProtectedRoute allowedRoles={['driver', 'business', 'customer']}>
@@ -193,6 +203,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute allowedRoles={['driver']}>
               <DriverProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/jobs"
+          element={
+            <ProtectedRoute allowedRoles={['driver']}>
+              <JobOffersPage />
             </ProtectedRoute>
           }
         />

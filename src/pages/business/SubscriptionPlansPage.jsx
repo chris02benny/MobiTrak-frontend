@@ -5,6 +5,7 @@ import { useToast } from '../../contexts/ToastContext'
 import { useNavigate } from 'react-router-dom'
 import DashboardLayout from '../../components/DashboardLayout'
 import { Shield } from 'lucide-react'
+import { businessSidebarItems } from '../../config/businessSidebarConfig'
 
 const SubscriptionPlansPage = () => {
   const { user } = useAuth()
@@ -185,7 +186,7 @@ const SubscriptionPlansPage = () => {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout title="Subscription" sidebarItems={businessSidebarItems}>
         <div className="flex items-center justify-center min-h-[60vh]">
           <motion.div
             animate={{ rotate: 360 }}
@@ -224,7 +225,7 @@ const SubscriptionPlansPage = () => {
   const currentPlan = subscriptionData?.subscription_type || 'free'
 
   return (
-    <DashboardLayout>
+    <DashboardLayout title="Subscription" sidebarItems={businessSidebarItems}>
       <div className="min-h-screen bg-bgBlack text-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}

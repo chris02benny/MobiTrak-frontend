@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import DashboardLayout from '../../components/DashboardLayout';
 import DashboardCard from '../../components/DashboardCard';
-import ConfirmationModal from '../../components/ConfirmationModal';
+import JobOfferModal from '../../components/JobOfferModal';
 import { supabase } from '../../utils/supabase';
 import { businessSidebarItems } from '../../config/businessSidebarConfig';
 
@@ -13,6 +13,7 @@ const HireDriversPage = () => {
   const { showToast } = useToast();
   
   const [drivers, setDrivers] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState(null);
@@ -20,75 +21,49 @@ const HireDriversPage = () => {
 
   useEffect(() => {
     fetchAvailableDrivers();
+    fetchVehicles();
   }, []);
 
   const fetchAvailableDrivers = async () => {
     try {
       setLoading(true);
       
-      // Fetch complete driver profiles from Supabase
-      const { data: driverProfilesBase, error: dpError } = await supabase
-        .from('driver_profiles')
-        .select('id, user_id, license_number, full_name, city, state, rating, total_trips, experience_years, is_available_for_hire, profile_complete, created_at, profile_picture_url')
-        .eq('profile_complete', true)
-        .eq('is_available_for_hire', true)
-        .order('created_at', { ascending: false });
+      // Get business profile ID
+      const { data: businessProfile, error: businessError } = await supabase
+        .from('business_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
 
-      if (dpError) {
-        throw dpError;
+      if (businessError || !businessProfile) {
+        throw new Error('Business profile not found');
       }
 
-      if (!driverProfilesBase || driverProfilesBase.length === 0) {
-        setDrivers([]);
-        setLoading(false);
-        return;
+      // Call the Edge Function to get hireable drivers
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-hireable-drivers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({
+          business_id: businessProfile.id,
+          limit: 50
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch drivers');
       }
 
-      // Fetch related user_profiles in one query using IN on user_id
-      const userIds = driverProfilesBase.map(p => p.user_id).filter(Boolean);
-      let userById = new Map();
+      const data = await response.json();
       
-      if (userIds.length > 0) {
-        try {
-          const { data: users, error: upError } = await supabase
-            .from('user_profiles')
-            .select('id, email, full_name, phone_number')
-            .in('id', userIds);
-
-          if (upError) {
-            console.warn('Failed to fetch user_profiles, continuing without user data:', upError);
-          } else {
-            userById = new Map((users || []).map(u => [u.id, u]));
-          }
-        } catch (error) {
-          console.warn('Error fetching user_profiles, continuing without user data:', error);
-        }
+      if (data.success) {
+        setDrivers(data.drivers || []);
+        console.log(`📋 Found ${data.drivers?.length || 0} drivers available for hire`);
+      } else {
+        throw new Error(data.error || 'Failed to fetch drivers');
       }
-      const driverProfiles = driverProfilesBase.map(profile => ({
-        ...profile,
-        user_profiles: userById.get(profile.user_id) || null,
-      }));
-
-      // Transform data to match expected format
-      const transformedDrivers = driverProfiles.map(profile => ({
-        id: profile.id,
-        user_id: profile.user_id,
-        user_profiles: profile.user_profiles,
-        license_number: profile.license_number,
-        full_name: profile.full_name,
-        city: profile.city,
-        state: profile.state,
-        rating: profile.rating || 0,
-        total_trips: profile.total_trips || 0,
-        experience_years: profile.experience_years || 0,
-        is_available_for_hire: profile.is_available_for_hire,
-        profile_complete: profile.profile_complete,
-        created_at: profile.created_at,
-        profile_picture_url: profile.profile_picture_url
-      }));
-
-      setDrivers(transformedDrivers);
-      console.log(`📋 Found ${transformedDrivers.length} available drivers for hire`);
       
     } catch (error) {
       console.error('Error fetching available drivers:', error);
@@ -98,34 +73,74 @@ const HireDriversPage = () => {
     }
   };
 
-  const handleHireDriver = async () => {
+  const fetchVehicles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('id, manufacturer, model, year, license_plate, vehicle_type, vehicle_image_url')
+        .eq('business_id', user.id)
+        .eq('status', 'available');
+
+      if (error) {
+        throw error;
+      }
+
+      setVehicles(data || []);
+    } catch (error) {
+      console.error('Error fetching vehicles:', error);
+      showToast('Error fetching vehicles', 'error');
+    }
+  };
+
+  const handleHireDriver = async (offerData) => {
     if (!selectedDriver) return;
 
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/drivers/hire`, {
+      // Get business profile ID
+      const { data: businessProfile, error: businessError } = await supabase
+        .from('business_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (businessError || !businessProfile) {
+        throw new Error('Business profile not found');
+      }
+
+      // Call the Edge Function to create job offer
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/on-hire-request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
         body: JSON.stringify({
-          business_id: user.id,
-          driver_pool_id: selectedDriver.id
-        }),
+          business_id: businessProfile.id,
+          driver_id: selectedDriver.id,
+          vehicle_id: offerData.vehicle_id || null,
+          message: offerData.message,
+          offer_details: offerData.offer_details
+        })
       });
 
+      if (!response.ok) {
+        throw new Error('Failed to send job offer');
+      }
+
       const data = await response.json();
-      if (response.ok) {
-        showToast('Driver hired successfully!', 'success');
+      
+      if (data.success) {
+        showToast('Job offer sent successfully!', 'success');
         setShowHireModal(false);
         setSelectedDriver(null);
-        fetchAvailableDrivers(); // Refresh the list
+        fetchAvailableDrivers(); // Refresh to remove hired driver from pool
       } else {
-        showToast(`Failed to hire driver: ${data.error}`, 'error');
+        throw new Error(data.error || 'Failed to send job offer');
       }
     } catch (error) {
-      console.error('Error hiring driver:', error);
-      showToast('Error hiring driver', 'error');
+      console.error('Error sending job offer:', error);
+      showToast(error.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -280,31 +295,16 @@ const HireDriversPage = () => {
         </div>
       )}
 
-      {/* Hire Driver Modal */}
-      <ConfirmationModal
+      {/* Job Offer Modal */}
+      <JobOfferModal
         isOpen={showHireModal}
-        onClose={() => setShowHireModal(false)}
-        onConfirm={handleHireDriver}
-        title="Hire Driver"
-        message={
-          <div className="text-left">
-            <p className="mb-4">Are you sure you want to hire this driver?</p>
-            {selectedDriver && (
-              <div className="space-y-2 text-sm">
-                <div><strong>Name:</strong> {selectedDriver.user_profiles?.full_name || selectedDriver.full_name}</div>
-                <div><strong>Email:</strong> {selectedDriver.user_profiles?.email}</div>
-                <div><strong>License:</strong> {selectedDriver.license_number}</div>
-                <div><strong>Location:</strong> {selectedDriver.city}, {selectedDriver.state}</div>
-                <div><strong>Rating:</strong> {selectedDriver.rating.toFixed(1)}/5.0</div>
-                <div><strong>Experience:</strong> {selectedDriver.experience_years} years</div>
-                <div><strong>Total Trips:</strong> {selectedDriver.total_trips}</div>
-              </div>
-            )}
-          </div>
-        }
-        confirmText="Hire Driver"
-        cancelText="Cancel"
-        confirmButtonClass="bg-primary hover:bg-primary/80 text-black"
+        onClose={() => {
+          setShowHireModal(false);
+          setSelectedDriver(null);
+        }}
+        driver={selectedDriver}
+        vehicles={vehicles}
+        onSubmit={handleHireDriver}
         loading={loading}
       />
     </DashboardLayout>
