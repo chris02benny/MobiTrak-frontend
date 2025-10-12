@@ -166,6 +166,15 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        {/* Redirect old job-offers route to driver management */}
+        <Route
+          path="/business/job-offers"
+          element={
+            <ProtectedRoute allowedRoles={['business']}>
+              <DriverManagementPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/business/subscription"
           element={

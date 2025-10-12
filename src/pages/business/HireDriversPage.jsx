@@ -182,13 +182,20 @@ const HireDriversPage = () => {
         })
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Edge function error:', errorText);
-        throw new Error(`Failed to send job offer: ${response.status} ${response.statusText}`);
-      }
-
       const data = await response.json();
+      
+      if (response.status === 409 && data.error === 'DUPLICATE_OFFER') {
+        // Handle duplicate offer case
+        showToast('A pending job offer already exists for this driver', 'warning');
+        setShowHireModal(false);
+        setSelectedDriver(null);
+        return;
+      }
+      
+      if (!response.ok) {
+        console.error('Edge function error:', data);
+        throw new Error(data.error || `Failed to send job offer: ${response.status} ${response.statusText}`);
+      }
       
       if (data.success) {
         showToast('Job offer sent successfully!', 'success');
