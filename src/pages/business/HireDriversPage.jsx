@@ -28,15 +28,43 @@ const HireDriversPage = () => {
     try {
       setLoading(true);
       
-      // Get business profile ID
-      const { data: businessProfile, error: businessError } = await supabase
+      // Get business profile ID, create one if it doesn't exist
+      let businessProfile = null;
+      const { data: existingProfile, error: businessError } = await supabase
         .from('business_profiles')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
-      if (businessError || !businessProfile) {
-        throw new Error('Business profile not found');
+      if (businessError && businessError.code === 'PGRST116') {
+        // Business profile doesn't exist, create one
+        console.log('Business profile not found, creating one...');
+        const { data: newProfile, error: createError } = await supabase
+          .from('business_profiles')
+          .insert({
+            user_id: user.id,
+            business_name: 'MobiTrak Business Solutions',
+            business_phone: '+91 98765 43210',
+            business_email: user.email,
+            business_address: '123 Business Street, Mumbai, Maharashtra 400001',
+            bio: 'Professional transportation and logistics solutions provider'
+          })
+          .select('id')
+          .single();
+
+        if (createError) {
+          throw new Error(`Failed to create business profile: ${createError.message}`);
+        }
+        businessProfile = newProfile;
+        console.log('Business profile created successfully');
+      } else if (businessError) {
+        throw new Error(`Failed to fetch business profile: ${businessError.message}`);
+      } else {
+        businessProfile = existingProfile;
+      }
+
+      if (!businessProfile) {
+        throw new Error('Business profile not found and could not be created');
       }
 
       // Call the Edge Function to get hireable drivers
@@ -53,7 +81,9 @@ const HireDriversPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch drivers');
+        const errorText = await response.text();
+        console.error('Edge function error:', errorText);
+        throw new Error(`Failed to fetch drivers: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -67,7 +97,7 @@ const HireDriversPage = () => {
       
     } catch (error) {
       console.error('Error fetching available drivers:', error);
-      showToast('Error fetching available drivers', 'error');
+      showToast(`Error fetching available drivers: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -97,15 +127,43 @@ const HireDriversPage = () => {
 
     setLoading(true);
     try {
-      // Get business profile ID
-      const { data: businessProfile, error: businessError } = await supabase
+      // Get business profile ID, create one if it doesn't exist
+      let businessProfile = null;
+      const { data: existingProfile, error: businessError } = await supabase
         .from('business_profiles')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
-      if (businessError || !businessProfile) {
-        throw new Error('Business profile not found');
+      if (businessError && businessError.code === 'PGRST116') {
+        // Business profile doesn't exist, create one
+        console.log('Business profile not found, creating one...');
+        const { data: newProfile, error: createError } = await supabase
+          .from('business_profiles')
+          .insert({
+            user_id: user.id,
+            business_name: 'MobiTrak Business Solutions',
+            business_phone: '+91 98765 43210',
+            business_email: user.email,
+            business_address: '123 Business Street, Mumbai, Maharashtra 400001',
+            bio: 'Professional transportation and logistics solutions provider'
+          })
+          .select('id')
+          .single();
+
+        if (createError) {
+          throw new Error(`Failed to create business profile: ${createError.message}`);
+        }
+        businessProfile = newProfile;
+        console.log('Business profile created successfully');
+      } else if (businessError) {
+        throw new Error(`Failed to fetch business profile: ${businessError.message}`);
+      } else {
+        businessProfile = existingProfile;
+      }
+
+      if (!businessProfile) {
+        throw new Error('Business profile not found and could not be created');
       }
 
       // Call the Edge Function to create job offer
@@ -125,7 +183,9 @@ const HireDriversPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send job offer');
+        const errorText = await response.text();
+        console.error('Edge function error:', errorText);
+        throw new Error(`Failed to send job offer: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -303,7 +363,6 @@ const HireDriversPage = () => {
           setSelectedDriver(null);
         }}
         driver={selectedDriver}
-        vehicles={vehicles}
         onSubmit={handleHireDriver}
         loading={loading}
       />

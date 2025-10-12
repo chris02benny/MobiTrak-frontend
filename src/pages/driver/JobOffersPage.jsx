@@ -36,6 +36,8 @@ const JobOffersPage = () => {
     try {
       setLoading(true);
       
+      console.log('Fetching job offers for user:', user.id);
+      
       // Get driver profile ID
       const { data: driverProfile, error: driverError } = await supabase
         .from('driver_profiles')
@@ -44,32 +46,63 @@ const JobOffersPage = () => {
         .single();
 
       if (driverError || !driverProfile) {
+        console.error('Driver profile error:', driverError);
         throw new Error('Driver profile not found');
       }
 
-      // Call the Edge Function to get job offers
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-driver-job-offers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        },
-        body: JSON.stringify({
-          driver_id: driverProfile.id,
-          status: selectedStatus === 'all' ? undefined : selectedStatus,
-          limit: 50
-        })
-      });
+      console.log('Driver profile found:', driverProfile);
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch job offers');
+      // Fetch job offers for this driver
+      let query = supabase
+        .from('job_offers')
+        .select('*')
+        .eq('driver_id', driverProfile.id)
+        .order('created_at', { ascending: false });
+
+      // Apply status filter if not 'all'
+      if (selectedStatus !== 'all') {
+        query = query.eq('status', selectedStatus);
       }
 
-      const data = await response.json();
-      setJobOffers(data.job_offers || []);
+      const { data: offers, error: offersError } = await query;
+
+      if (offersError) {
+        console.error('Job offers error:', offersError);
+        throw new Error(`Failed to fetch job offers: ${offersError.message}`);
+      }
+
+      console.log('Raw job offers:', offers);
+
+      // Get business details for each job offer
+      const offersWithBusinessData = await Promise.all(
+        (offers || []).map(async (offer) => {
+          const { data: businessProfile } = await supabase
+            .from('business_profiles')
+            .select('id, business_name, business_phone, business_email, business_address, user_id')
+            .eq('id', offer.business_id)
+            .single();
+
+          const { data: businessUser } = await supabase
+            .from('user_profiles')
+            .select('email, full_name')
+            .eq('id', businessProfile?.user_id)
+            .single();
+
+          return {
+            ...offer,
+            business_profiles: {
+              ...businessProfile,
+              user_profiles: businessUser
+            }
+          };
+        })
+      );
+
+      console.log('Final job offers with business data:', offersWithBusinessData);
+      setJobOffers(offersWithBusinessData);
     } catch (error) {
       console.error('Error fetching job offers:', error);
-      showToast('Failed to load job offers', 'error');
+      showToast(`Failed to load job offers: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -83,36 +116,27 @@ const JobOffersPage = () => {
     try {
       setResponding(true);
       
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/on-job-response`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        },
-        body: JSON.stringify({
-          job_id: jobId,
-          status,
-          driver_message: driverMessage.trim() || undefined
+      // Update job offer status directly in database
+      const { error: updateError } = await supabase
+        .from('job_offers')
+        .update({ 
+          status: status,
+          responded_at: new Date().toISOString(),
+          driver_message: driverMessage.trim() || null
         })
-      });
+        .eq('id', jobId);
 
-      if (!response.ok) {
-        throw new Error('Failed to respond to job offer');
+      if (updateError) {
+        throw new Error(`Failed to update job offer: ${updateError.message}`);
       }
 
-      const data = await response.json();
-      
-      if (data.success) {
-        showToast(
-          status === 'accepted' ? 'Job offer accepted!' : 'Job offer rejected',
-          'success'
-        );
-        setShowModal(false);
-        setDriverMessage('');
-        fetchJobOffers(); // Refresh the list
-      } else {
-        throw new Error(data.error || 'Failed to respond to job offer');
-      }
+      showToast(
+        status === 'accepted' ? 'Job offer accepted!' : 'Job offer rejected',
+        'success'
+      );
+      setShowModal(false);
+      setDriverMessage('');
+      fetchJobOffers(); // Refresh the list
     } catch (error) {
       console.error('Error responding to job offer:', error);
       showToast(error.message, 'error');
@@ -395,3 +419,4 @@ const JobOffersPage = () => {
 };
 
 export default JobOffersPage;
+

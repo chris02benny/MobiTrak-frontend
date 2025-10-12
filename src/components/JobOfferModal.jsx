@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Send, Car, Building2, MessageSquare } from 'lucide-react';
+import { X, Send, Building2, MessageSquare } from 'lucide-react';
 
 const JobOfferModal = ({ 
   isOpen, 
   onClose, 
   driver, 
-  vehicles = [], 
   onSubmit, 
   loading = false 
 }) => {
-  const [selectedVehicle, setSelectedVehicle] = useState('');
   const [message, setMessage] = useState('');
   const [offerDetails, setOfferDetails] = useState({
     salary: '',
@@ -21,15 +19,10 @@ const JobOfferModal = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    if (!selectedVehicle && vehicles.length > 0) {
-      alert('Please select a vehicle for this job offer');
-      return;
-    }
 
     onSubmit({
       driver_id: driver.id,
-      vehicle_id: selectedVehicle || null,
+      vehicle_id: null, // No vehicle assignment
       message: message.trim() || undefined,
       offer_details: {
         ...offerDetails,
@@ -42,7 +35,6 @@ const JobOfferModal = ({
   };
 
   const handleClose = () => {
-    setSelectedVehicle('');
     setMessage('');
     setOfferDetails({
       salary: '',
@@ -105,27 +97,6 @@ const JobOfferModal = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Vehicle Selection */}
-          {vehicles.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Assign Vehicle (Optional)
-              </label>
-              <select
-                value={selectedVehicle}
-                onChange={(e) => setSelectedVehicle(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">No vehicle assignment</option>
-                {vehicles.map((vehicle) => (
-                  <option key={vehicle.id} value={vehicle.id}>
-                    {vehicle.manufacturer} {vehicle.model} ({vehicle.year}) - {vehicle.license_plate}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
           {/* Message */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -226,3 +197,4 @@ const JobOfferModal = ({
 };
 
 export default JobOfferModal;
+

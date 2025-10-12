@@ -50,7 +50,7 @@ export const useProfilePicture = () => {
           // Set fallback even on error
           setProfilePicture({
             url: null,
-            name: user.email?.split('@')[0]
+            name: user.email?.split('@')[0] || 'User'
           });
         } else if (data) {
           console.log('Profile data fetched:', data);
@@ -71,10 +71,10 @@ export const useProfilePicture = () => {
           console.log('Setting profile picture state:', profileData);
           setProfilePicture(profileData);
         } else {
-          console.log('No profile data found');
+          console.log('No profile data found for user role:', userRole);
           setProfilePicture({
             url: null,
-            name: user.email?.split('@')[0]
+            name: user.email?.split('@')[0] || 'User'
           });
         }
       } catch (error) {
