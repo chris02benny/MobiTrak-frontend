@@ -21,77 +21,36 @@ const JobsPage = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
   
-  const [jobOffers, setJobOffers] = useState([]);
+  const [hireRequests, setHireRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [showJobDetails, setShowJobDetails] = useState(false);
-  const [filter, setFilter] = useState('all'); // all, pending, accepted, declined
+  const [filter, setFilter] = useState('all'); // all, pending, accepted, rejected
 
   useEffect(() => {
-    fetchJobOffers();
+    fetchHireRequests();
   }, []);
 
-  const fetchJobOffers = async () => {
+  const fetchHireRequests = async () => {
     try {
       setLoading(true);
       
       console.log('Fetching job offers for user:', user.id);
       
-      // Get driver profile ID
-      const { data: driverProfile, error: driverError } = await supabase
-        .from('driver_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/drivers/hire-requests`, {
+        headers: {
+          'x-user-id': user.id,
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        }
+      });
 
-      if (driverError || !driverProfile) {
-        console.error('Driver profile error:', driverError);
-        throw new Error('Driver profile not found');
+      if (!response.ok) {
+        throw new Error('Failed to fetch job offers');
       }
 
-      console.log('Driver profile found:', driverProfile);
-
-      // Fetch job offers for this driver
-      const { data: offers, error: offersError } = await supabase
-        .from('job_offers')
-        .select('*')
-        .eq('driver_id', driverProfile.id)
-        .order('created_at', { ascending: false });
-
-      if (offersError) {
-        console.error('Job offers error:', offersError);
-        throw new Error(`Failed to fetch job offers: ${offersError.message}`);
-      }
-
-      console.log('Raw job offers:', offers);
-
-      // Get business details for each job offer
-      const offersWithBusinessData = await Promise.all(
-        (offers || []).map(async (offer) => {
-          const { data: businessProfile } = await supabase
-            .from('business_profiles')
-            .select('id, business_name, business_phone, business_email, business_address, user_id')
-            .eq('id', offer.business_id)
-            .single();
-
-          const { data: businessUser } = await supabase
-            .from('user_profiles')
-            .select('email, full_name')
-            .eq('id', businessProfile?.user_id)
-            .single();
-
-          return {
-            ...offer,
-            business_profiles: {
-              ...businessProfile,
-              user_profiles: businessUser
-            }
-          };
-        })
-      );
-
-      console.log('Final job offers with business data:', offersWithBusinessData);
-      setJobOffers(offersWithBusinessData);
+      const data = await response.json();
+      console.log('Job offers data:', data);
+      setHireRequests(data.hireRequests || []);
     } catch (error) {
       console.error('Error fetching job offers:', error);
       showToast(`Error fetching job offers: ${error.message}`, 'error');
@@ -100,21 +59,29 @@ const JobsPage = () => {
     }
   };
 
-  const handleJobResponse = async (jobId, response) => {
+  const handleJobResponse = async (hireRequestId, response) => {
     try {
       setLoading(true);
       
-      const { error } = await supabase
-        .from('job_offers')
-        .update({ 
-          status: response,
-          responded_at: new Date().toISOString()
+      const response_data = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/drivers/hire-requests/respond`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({
+          hireRequestId: hireRequestId,
+          response: response
         })
-        .eq('id', jobId);
+      });
 
-      if (error) {
-        throw new Error(`Failed to update job offer: ${error.message}`);
+      if (!response_data.ok) {
+        const errorData = await response_data.json();
+        throw new Error(errorData.message || 'Failed to respond to hire request');
       }
+
+      const data = await response_data.json();
 
       showToast(
         response === 'accepted' 
@@ -123,13 +90,13 @@ const JobsPage = () => {
         response === 'accepted' ? 'success' : 'info'
       );
 
-      // Refresh job offers
-      await fetchJobOffers();
+      // Refresh hire requests
+      await fetchHireRequests();
       setShowJobDetails(false);
       setSelectedJob(null);
     } catch (error) {
-      console.error('Error responding to job offer:', error);
-      showToast(`Error responding to job offer: ${error.message}`, 'error');
+      console.error('Error responding to hire request:', error);
+      showToast(`Error responding to hire request: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -160,9 +127,9 @@ const JobsPage = () => {
     }
   };
 
-  const filteredOffers = jobOffers.filter(offer => {
+  const filteredOffers = hireRequests.filter(request => {
     if (filter === 'all') return true;
-    return offer.status === filter;
+    return request.status === filter;
   });
 
   const formatDate = (dateString) => {
@@ -260,7 +227,7 @@ const JobsPage = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
                         <h3 className="text-lg font-semibold text-white">
-                          {offer.business_profiles.business_name || offer.business_profiles.user_profiles.full_name}
+                          {offer.business_profiles?.business_name || 'Unknown Business'}
                         </h3>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(offer.status)}`}>
                           {getStatusIcon(offer.status)}
@@ -281,15 +248,15 @@ const JobsPage = () => {
                           </div>
                         )}
 
-                        {offer.business_profiles.business_address && (
+                        {offer.vehicles && (
                           <div className="flex items-center gap-2 text-gray-300">
                             <MapPinIcon className="w-4 h-4" />
-                            <span className="text-sm">{offer.business_profiles.business_address}</span>
+                            <span className="text-sm">{offer.vehicles.manufacturer} {offer.vehicles.model}</span>
                           </div>
                         )}
 
                         <div className="flex items-center gap-2 text-gray-300">
-                          <span className="text-sm">Phone: {offer.business_profiles.business_phone || 'Not provided'}</span>
+                          <span className="text-sm">License: {offer.vehicles?.license_plate || 'Not assigned'}</span>
                         </div>
                       </div>
 
@@ -344,7 +311,7 @@ const JobsPage = () => {
                             Accept
                           </button>
                           <button
-                            onClick={() => handleJobResponse(offer.id, 'declined')}
+                            onClick={() => handleJobResponse(offer.id, 'rejected')}
                             disabled={loading}
                             className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
                           >
