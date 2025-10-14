@@ -44,15 +44,28 @@ const BusinessDashboard = () => {
         .from('business_dashboard_view')
         .select('*')
         .eq('business_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (dashboardError && dashboardError.code !== 'PGRST116') {
-        throw dashboardError;
+      if (dashboardError) {
+        console.warn('Dashboard view error:', dashboardError);
+        // Don't throw error, just use empty stats
       }
 
       setDashboardData({
         profile: businessProfile,
-        stats: dashboard
+        stats: dashboard || {
+          total_vehicles: 0,
+          available_vehicles: 0,
+          vehicles_in_use: 0,
+          total_drivers: 0,
+          available_drivers: 0,
+          hired_drivers: 0,
+          total_rentals: 0,
+          active_rentals: 0,
+          completed_rentals: 0,
+          total_revenue: 0,
+          monthly_revenue: 0
+        }
       });
     } catch (err) {
       console.error('Error fetching dashboard data:', err);

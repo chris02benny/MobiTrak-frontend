@@ -80,21 +80,28 @@ const BusinessProfilePage = () => {
   const { showToast } = useToast();
 
   const fetchProfile = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('No user ID available');
+      return;
+    }
 
     try {
       setLoading(true);
+      console.log('Fetching business profile for user:', user.id);
+      
       const { data, error } = await supabase
         .from('business_profiles')
         .select('business_name, business_email, business_phone, business_address, bio, profile_picture_url, profile_complete')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
+        console.error('Error fetching business profile:', error);
         throw error;
       }
 
       if (data) {
+        console.log('Business profile found:', data);
         setBusinessName(data.business_name || '');
         setBusinessEmail(data.business_email || '');
         setBusinessPhone(data.business_phone || '');
@@ -103,22 +110,45 @@ const BusinessProfilePage = () => {
         setProfilePictureUrl(data.profile_picture_url || '');
         setProfileComplete(data.profile_complete || false);
       } else {
+        console.log('No business profile found, creating one...');
         // No profile exists yet, create one
-        const { error: insertError } = await supabase
+        const { data: newProfile, error: insertError } = await supabase
           .from('business_profiles')
-          .insert([{ user_id: user.id }]);
+          .insert([{ 
+            user_id: user.id,
+            business_name: '',
+            business_email: user.email || '',
+            business_phone: '',
+            business_address: '',
+            bio: '',
+            profile_picture_url: '',
+            profile_complete: false
+          }])
+          .select('*')
+          .single();
 
         if (insertError) {
           console.error('Error creating business profile:', insertError);
+          showToast(`Failed to create business profile: ${insertError.message}`, 'error');
+        } else {
+          console.log('Business profile created successfully:', newProfile);
+          // Set the form fields with the new profile data
+          setBusinessName(newProfile.business_name || '');
+          setBusinessEmail(newProfile.business_email || '');
+          setBusinessPhone(newProfile.business_phone || '');
+          setBusinessAddress(newProfile.business_address || '');
+          setBio(newProfile.bio || '');
+          setProfilePictureUrl(newProfile.profile_picture_url || '');
+          setProfileComplete(newProfile.profile_complete || false);
         }
       }
     } catch (error) {
       console.error('Error fetching business profile:', error);
-      showToast(error.message, 'error');
+      showToast(`Failed to load business profile: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
-  }, [user?.id, supabase]);
+  }, [user?.id, user?.email, showToast]);
 
   useEffect(() => {
     fetchProfile();

@@ -161,15 +161,15 @@ export const AuthProvider = ({ children }) => {
       if (error) throw error
 
       // The user profile will be created by the database trigger
-      // but we need to update it with the correct role
+      // The trigger will automatically store the password and role
       if (data.user && !data.user.email_confirmed_at) {
-        // For unconfirmed users, we'll update the role after email confirmation
-        // Store the role in user metadata for now
         console.log('User registered, email verification required')
+        console.log('User profile created with role:', role)
       }
 
       return { data, error }
     } catch (error) {
+      console.error('SignUp error:', error)
       return { data: null, error }
     }
   }

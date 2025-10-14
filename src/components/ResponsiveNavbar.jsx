@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import { useProfilePicture } from '../hooks/useProfilePicture';
+import NotificationBell from './NotificationBell';
 import {
   User,
   Settings,
@@ -112,6 +113,10 @@ const ResponsiveNavbar = ({ title = "mobiTrak" }) => {
                           <span>Upgrade</span>
                         </motion.button>
                       )}
+                      
+                      {/* Notifications */}
+                      <NotificationBell />
+                      
                       {/* Profile dropdown for desktop */}
                       <div className="hidden md:block relative z-50" ref={profileRef}>
                         <button

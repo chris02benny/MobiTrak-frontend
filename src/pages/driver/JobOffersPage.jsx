@@ -1,42 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import DashboardLayout from '../../components/DashboardLayout';
-import { motion } from 'framer-motion';
-import { 
-  Briefcase, 
-  Clock, 
-  MapPin, 
-  Phone, 
-  Mail, 
-  CheckCircle, 
-  XCircle, 
-  AlertCircle,
-  Calendar,
-  Car,
-  Building2
-} from 'lucide-react';
-import { driverSidebarItems } from '../../config/driverSidebarConfig';
 import { supabase } from '../../utils/supabase';
+import { 
+  Check, 
+  X, 
+  Clock,
+  DollarSign,
+  Calendar,
+  Briefcase,
+  Building2,
+  Phone,
+  Mail,
+  MapPin
+} from 'lucide-react';
 
 const JobOffersPage = () => {
-  const [jobOffers, setJobOffers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedOffer, setSelectedOffer] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [responding, setResponding] = useState(false);
-  const [driverMessage, setDriverMessage] = useState('');
   const { user } = useAuth();
   const { showToast } = useToast();
+  const [jobOffers, setJobOffers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedOffer, setSelectedOffer] = useState(null);
+  const [showResponseModal, setShowResponseModal] = useState(false);
+  const [responseMessage, setResponseMessage] = useState('');
+  const [responding, setResponding] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetchJobOffers();
+    }
+  }, [user]);
 
   const fetchJobOffers = async () => {
-    if (!user?.id) return;
-
     try {
       setLoading(true);
-      
-      console.log('Fetching job offers for user:', user.id);
       
       // Get driver profile ID
       const { data: driverProfile, error: driverError } = await supabase
@@ -45,368 +42,315 @@ const JobOffersPage = () => {
         .eq('user_id', user.id)
         .single();
 
-      if (driverError || !driverProfile) {
-        console.error('Driver profile error:', driverError);
-        throw new Error('Driver profile not found');
-      }
+      if (driverError) throw driverError;
 
-      console.log('Driver profile found:', driverProfile);
-
-      // Fetch job offers for this driver
-      let query = supabase
-        .from('job_offers')
+      const { data: offers, error: offersError } = await supabase
+        .from('driver_job_offers')
         .select('*')
         .eq('driver_id', driverProfile.id)
         .order('created_at', { ascending: false });
 
-      // Apply status filter if not 'all'
-      if (selectedStatus !== 'all') {
-        query = query.eq('status', selectedStatus);
-      }
+      if (offersError) throw offersError;
 
-      const { data: offers, error: offersError } = await query;
-
-      if (offersError) {
-        console.error('Job offers error:', offersError);
-        throw new Error(`Failed to fetch job offers: ${offersError.message}`);
-      }
-
-      console.log('Raw job offers:', offers);
-
-      // Get business details for each job offer
-      const offersWithBusinessData = await Promise.all(
-        (offers || []).map(async (offer) => {
-          const { data: businessProfile } = await supabase
-            .from('business_profiles')
-            .select('id, business_name, business_phone, business_email, business_address, user_id')
-            .eq('id', offer.business_id)
-            .single();
-
-          const { data: businessUser } = await supabase
-            .from('user_profiles')
-            .select('email, full_name')
-            .eq('id', businessProfile?.user_id)
-            .single();
-
-          return {
-            ...offer,
-            business_profiles: {
-              ...businessProfile,
-              user_profiles: businessUser
-            }
-          };
-        })
-      );
-
-      console.log('Final job offers with business data:', offersWithBusinessData);
-      setJobOffers(offersWithBusinessData);
+      setJobOffers(offers);
     } catch (error) {
       console.error('Error fetching job offers:', error);
-      showToast(`Failed to load job offers: ${error.message}`, 'error');
+      showToast('Failed to load job offers', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchJobOffers();
-  }, [user?.id, selectedStatus]);
+  const handleRespondToOffer = (offer) => {
+    setSelectedOffer(offer);
+    setShowResponseModal(true);
+  };
 
-  const handleJobResponse = async (jobId, status) => {
+  const handleSubmitResponse = async (response) => {
     try {
       setResponding(true);
-      
-      // Update job offer status directly in database
-      const { error: updateError } = await supabase
-        .from('job_offers')
-        .update({ 
-          status: status,
-          responded_at: new Date().toISOString(),
-          driver_message: driverMessage.trim() || null
-        })
-        .eq('id', jobId);
 
-      if (updateError) {
-        throw new Error(`Failed to update job offer: ${updateError.message}`);
+      const responseData = await fetch(`/api/hiring/hire-requests/${selectedOffer.id}/respond`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-driver-id': user.id
+        },
+        body: JSON.stringify({
+          response: response,
+          driver_message: responseMessage
+        })
+      });
+
+      if (!responseData.ok) {
+        const error = await responseData.json();
+        throw new Error(error.error || 'Failed to respond to offer');
       }
 
       showToast(
-        status === 'accepted' ? 'Job offer accepted!' : 'Job offer rejected',
+        response === 'accepted' 
+          ? 'Job offer accepted! You will be contacted soon.' 
+          : 'Job offer declined.',
         'success'
       );
-      setShowModal(false);
-      setDriverMessage('');
-      fetchJobOffers(); // Refresh the list
+      
+      setShowResponseModal(false);
+      setResponseMessage('');
+      fetchJobOffers();
     } catch (error) {
-      console.error('Error responding to job offer:', error);
+      console.error('Error responding to offer:', error);
       showToast(error.message, 'error');
     } finally {
       setResponding(false);
     }
   };
 
-  const getStatusIcon = (status) => {
+  const getStatusColor = (status) => {
     switch (status) {
-      case 'pending':
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-      case 'accepted':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'rejected':
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'expired':
-        return <AlertCircle className="w-4 h-4 text-gray-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'accepted': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'expired': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'accepted':
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'rejected':
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'expired':
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-      default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('en-IN', {
       year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      month: 'long',
+      day: 'numeric'
     });
   };
 
-  const isExpired = (expiresAt) => {
+  const isOfferExpired = (expiresAt) => {
     return new Date(expiresAt) < new Date();
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-bgBlack text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4">Loading job offers...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <DashboardLayout title="Job Offers" sidebarItems={driverSidebarItems}>
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-bgBlack text-white p-6">
+      <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Job Offers</h1>
+          <h1 className="text-3xl font-bold mb-2">Job Offers</h1>
           <p className="text-gray-400">View and respond to job offers from businesses</p>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex space-x-1 mb-6 bg-gray-800 p-1 rounded-lg w-fit">
-          {[
-            { id: 'all', label: 'All', count: jobOffers.length },
-            { id: 'pending', label: 'Pending', count: jobOffers.filter(job => job.status === 'pending').length },
-            { id: 'accepted', label: 'Accepted', count: jobOffers.filter(job => job.status === 'accepted').length },
-            { id: 'rejected', label: 'Rejected', count: jobOffers.filter(job => job.status === 'rejected').length }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setSelectedStatus(tab.id)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedStatus === tab.id
-                  ? 'bg-primary text-black'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              {tab.label} ({tab.count})
-            </button>
-          ))}
-        </div>
-
-        {/* Job Offers List */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : jobOffers.length === 0 ? (
+        {jobOffers.length === 0 ? (
           <div className="text-center py-12">
-            <Briefcase className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No Job Offers</h3>
-            <p className="text-gray-400">
-              {selectedStatus === 'all' 
-                ? "You don't have any job offers yet. Complete your profile to start receiving offers."
-                : `No ${selectedStatus} job offers found.`
-              }
-            </p>
+            <Briefcase className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">No Job Offers Yet</h3>
+            <p className="text-gray-400">Complete your driver profile to start receiving job offers from businesses.</p>
           </div>
         ) : (
-          <div className="grid gap-6">
+          <div className="space-y-6">
             {jobOffers.map((offer) => (
-              <motion.div
-                key={offer.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors"
-              >
+              <div key={offer.id} className="bg-gray-800 rounded-lg p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                      <Building2 className="w-6 h-6 text-black" />
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                      <Building2 className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-white">
-                        {offer.business_profiles.business_name || offer.business_profiles.user_profiles.full_name}
-                      </h3>
-                      <p className="text-gray-400 text-sm">
-                        {formatDate(offer.created_at)}
-                      </p>
+                      <h3 className="font-semibold text-lg">{offer.business_name}</h3>
+                      <div className="flex items-center space-x-4 text-sm text-gray-400">
+                        <div className="flex items-center">
+                          <Mail className="w-4 h-4 mr-1" />
+                          <span>{offer.business_email}</span>
+                        </div>
+                        {offer.business_phone && (
+                          <div className="flex items-center">
+                            <Phone className="w-4 h-4 mr-1" />
+                            <span>{offer.business_phone}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border ${getStatusColor(offer.status)}`}>
-                    {getStatusIcon(offer.status)}
-                    <span className="text-sm font-medium capitalize">{offer.status}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(offer.status)}`}>
+                      {offer.status}
+                    </span>
+                    {isOfferExpired(offer.expires_at) && offer.status === 'pending' && (
+                      <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+                        Expired
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {offer.message && (
-                  <div className="mb-4 p-4 bg-gray-700/50 rounded-lg">
-                    <p className="text-gray-300 text-sm">{offer.message}</p>
+                {offer.business_address && (
+                  <div className="flex items-center text-sm text-gray-400 mb-4">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    <span>{offer.business_address}</span>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div className="flex items-center space-x-2 text-gray-300">
-                    <Mail className="w-4 h-4" />
-                    <span className="text-sm">{offer.business_profiles.business_email}</span>
+                {offer.message && (
+                  <div className="bg-gray-700 rounded-lg p-4 mb-4">
+                    <p className="text-gray-300">{offer.message}</p>
                   </div>
-                  <div className="flex items-center space-x-2 text-gray-300">
-                    <Phone className="w-4 h-4" />
-                    <span className="text-sm">{offer.business_profiles.business_phone}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-gray-300">
-                    <MapPin className="w-4 h-4" />
-                    <span className="text-sm">{offer.business_profiles.business_address}</span>
-                  </div>
-                  {offer.vehicles && (
-                    <div className="flex items-center space-x-2 text-gray-300">
-                      <Car className="w-4 h-4" />
-                      <span className="text-sm">
-                        {offer.vehicles.manufacturer} {offer.vehicles.model} ({offer.vehicles.year})
-                      </span>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                  {offer.salary_offered && (
+                    <div className="flex items-center text-sm">
+                      <DollarSign className="w-4 h-4 mr-2 text-green-400" />
+                      <span className="font-semibold">{formatCurrency(offer.salary_offered)}</span>
+                    </div>
+                  )}
+                  {offer.work_schedule && (
+                    <div className="flex items-center text-sm">
+                      <Clock className="w-4 h-4 mr-2 text-blue-400" />
+                      <span>{offer.work_schedule}</span>
+                    </div>
+                  )}
+                  {offer.start_date && (
+                    <div className="flex items-center text-sm">
+                      <Calendar className="w-4 h-4 mr-2 text-purple-400" />
+                      <span>{formatDate(offer.start_date)}</span>
+                    </div>
+                  )}
+                  {offer.contract_duration_months && (
+                    <div className="flex items-center text-sm">
+                      <Briefcase className="w-4 h-4 mr-2 text-orange-400" />
+                      <span>{offer.contract_duration_months} months</span>
                     </div>
                   )}
                 </div>
 
+                {offer.vehicle_name && (
+                  <div className="bg-gray-700 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-gray-300">
+                      <strong>Vehicle:</strong> {offer.vehicle_name}
+                      {offer.vehicle_type && ` (${offer.vehicle_type})`}
+                    </p>
+                  </div>
+                )}
+
+                {offer.driver_message && (
+                  <div className="bg-blue-900 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-blue-200">
+                      <strong>Your Response:</strong> {offer.driver_message}
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 text-gray-400 text-sm">
-                    <Calendar className="w-4 h-4" />
-                    <span>
-                      Expires: {formatDate(offer.expires_at)}
-                      {isExpired(offer.expires_at) && (
-                        <span className="text-red-400 ml-1">(Expired)</span>
-                      )}
-                    </span>
+                  <div className="text-sm text-gray-400">
+                    <p>Received: {formatDate(offer.created_at)}</p>
+                    {offer.expires_at && (
+                      <p>Expires: {formatDate(offer.expires_at)}</p>
+                    )}
                   </div>
 
-                  {offer.status === 'pending' && !isExpired(offer.expires_at) && (
+                  {offer.status === 'pending' && !isOfferExpired(offer.expires_at) && (
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => {
-                          setSelectedOffer(offer);
-                          setShowModal(true);
-                        }}
-                        className="px-4 py-2 bg-primary text-black rounded-md hover:bg-primary/80 transition-colors text-sm font-medium"
+                        onClick={() => handleRespondToOffer(offer)}
+                        className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center"
                       >
-                        View Details
+                        <Check className="w-4 h-4 mr-2" />
+                        Respond
                       </button>
                     </div>
                   )}
+
+                  {offer.status === 'accepted' && (
+                    <div className="text-green-400 text-sm font-medium">
+                      ✓ Offer Accepted
+                    </div>
+                  )}
+
+                  {offer.status === 'rejected' && (
+                    <div className="text-red-400 text-sm font-medium">
+                      ✗ Offer Declined
+                    </div>
+                  )}
+
+                  {isOfferExpired(offer.expires_at) && offer.status === 'pending' && (
+                    <div className="text-gray-400 text-sm font-medium">
+                      ⏰ Offer Expired
+                    </div>
+                  )}
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         )}
 
-        {/* Job Response Modal */}
-        {showModal && selectedOffer && (
-          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
-            <div className="bg-gray-900 w-full max-w-2xl rounded-lg p-6 border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                Job Offer from {selectedOffer.business_profiles.business_name}
-              </h3>
-
-              <div className="space-y-4 mb-6">
-                {selectedOffer.message && (
-                  <div className="p-4 bg-gray-800 rounded-lg">
-                    <h4 className="font-medium text-white mb-2">Message from Business:</h4>
-                    <p className="text-gray-300">{selectedOffer.message}</p>
-                  </div>
+        {/* Response Modal */}
+        {showResponseModal && selectedOffer && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+              <h2 className="text-xl font-semibold mb-4">Respond to Job Offer</h2>
+              
+              <div className="mb-4">
+                <p className="text-gray-300 mb-2">
+                  <strong>From:</strong> {selectedOffer.business_name}
+                </p>
+                {selectedOffer.salary_offered && (
+                  <p className="text-gray-300 mb-2">
+                    <strong>Salary:</strong> {formatCurrency(selectedOffer.salary_offered)}
+                  </p>
                 )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-medium text-white mb-2">Business Details:</h4>
-                    <div className="space-y-2 text-sm text-gray-300">
-                      <div className="flex items-center space-x-2">
-                        <Mail className="w-4 h-4" />
-                        <span>{selectedOffer.business_profiles.business_email}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Phone className="w-4 h-4" />
-                        <span>{selectedOffer.business_profiles.business_phone}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="w-4 h-4" />
-                        <span>{selectedOffer.business_profiles.business_address}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {selectedOffer.vehicles && (
-                    <div>
-                      <h4 className="font-medium text-white mb-2">Assigned Vehicle:</h4>
-                      <div className="text-sm text-gray-300">
-                        <p>{selectedOffer.vehicles.manufacturer} {selectedOffer.vehicles.model}</p>
-                        <p>Year: {selectedOffer.vehicles.year}</p>
-                        <p>Type: {selectedOffer.vehicles.vehicle_type}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Your Response (Optional)
-                  </label>
-                  <textarea
-                    value={driverMessage}
-                    onChange={(e) => setDriverMessage(e.target.value)}
-                    placeholder="Add a message for the business..."
-                    className="w-full h-24 px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
+                {selectedOffer.work_schedule && (
+                  <p className="text-gray-300 mb-2">
+                    <strong>Schedule:</strong> {selectedOffer.work_schedule}
+                  </p>
+                )}
               </div>
 
-              <div className="flex justify-end space-x-3">
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">Your Message (Optional)</label>
+                <textarea
+                  value={responseMessage}
+                  onChange={(e) => setResponseMessage(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                  rows={3}
+                  placeholder="Add a message to the business..."
+                />
+              </div>
+
+              <div className="flex space-x-3">
                 <button
-                  onClick={() => {
-                    setShowModal(false);
-                    setDriverMessage('');
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                  disabled={responding}
+                  onClick={() => setShowResponseModal(false)}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => handleJobResponse(selectedOffer.id, 'rejected')}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                  onClick={() => handleSubmitResponse('rejected')}
                   disabled={responding}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center"
                 >
-                  {responding ? 'Rejecting...' : 'Reject'}
+                  <X className="w-4 h-4 mr-2" />
+                  {responding ? 'Declining...' : 'Decline'}
                 </button>
                 <button
-                  onClick={() => handleJobResponse(selectedOffer.id, 'accepted')}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                  onClick={() => handleSubmitResponse('accepted')}
                   disabled={responding}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center"
                 >
+                  <Check className="w-4 h-4 mr-2" />
                   {responding ? 'Accepting...' : 'Accept'}
                 </button>
               </div>
@@ -414,9 +358,8 @@ const JobOffersPage = () => {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 
 export default JobOffersPage;
-

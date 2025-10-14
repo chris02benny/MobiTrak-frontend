@@ -23,6 +23,7 @@ import PaymentPage from './pages/business/PaymentPage'
 // Import context providers
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ToastProvider } from './contexts/ToastContext'
+import { NotificationProvider } from './contexts/NotificationContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import { redirectToDashboard } from './utils/navigation'
 import { useNavigate } from 'react-router-dom'
@@ -232,9 +233,11 @@ function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
+        <NotificationProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </NotificationProvider>
       </AuthProvider>
     </ToastProvider>
   )

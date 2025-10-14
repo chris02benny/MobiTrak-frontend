@@ -37,7 +37,7 @@ const JobsPage = () => {
       
       console.log('Fetching job offers for user:', user.id);
       
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/drivers/hire-requests`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/drivers/hire-requests`, {
         headers: {
           'x-user-id': user.id,
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
@@ -63,7 +63,7 @@ const JobsPage = () => {
     try {
       setLoading(true);
       
-      const response_data = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/drivers/hire-requests/respond`, {
+      const response_data = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/drivers/hire-requests/respond`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
