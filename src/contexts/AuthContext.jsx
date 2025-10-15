@@ -55,8 +55,8 @@ export const AuthProvider = ({ children }) => {
       async (event, session) => {
         console.log('Auth state change:', event, session?.user?.email || 'no user')
 
-        // Skip processing during initial load to prevent duplicate role fetching
-        if (initializing) {
+        // During initialization, still process SIGNED_IN/TOKEN_REFRESHED so redirects work
+        if (initializing && !(event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
           console.log('Skipping auth change during initialization')
           return
         }
@@ -146,14 +146,56 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Derive a PBKDF2 hash using Web Crypto (browser-native)
+  const derivePasswordHash = async (password) => {
+    try {
+      const enc = new TextEncoder()
+      const saltBytes = crypto.getRandomValues(new Uint8Array(16))
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw',
+        enc.encode(password),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveBits', 'deriveKey']
+      )
+      const iterations = 150000
+      const derivedKey = await crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt: saltBytes,
+          iterations,
+          hash: 'SHA-256',
+        },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+      )
+      const rawKey = await crypto.subtle.exportKey('raw', derivedKey)
+      const hashBytes = new Uint8Array(rawKey)
+
+      const b64 = (buf) => btoa(String.fromCharCode(...buf))
+      const saltB64 = b64(saltBytes)
+      const hashB64 = b64(hashBytes)
+      return `pbkdf2_sha256$${iterations}$${saltB64}$${hashB64}`
+    } catch (_err) {
+      return null
+    }
+  }
+
   const signUp = async (email, password, role) => {
     try {
+      // Hash password client-side (for storing a hash in user_profiles only)
+      // Note: Supabase will still handle the real password securely.
+      const passwordHash = await derivePasswordHash(password)
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            role: role // Store role in user metadata
+            role: role, // Store role in user metadata
+            ...(passwordHash ? { password_hash: passwordHash } : {})
           }
         }
       })
@@ -161,7 +203,7 @@ export const AuthProvider = ({ children }) => {
       if (error) throw error
 
       // The user profile will be created by the database trigger
-      // The trigger will automatically store the password and role
+      // The trigger will automatically store the role and optional password hash
       if (data.user && !data.user.email_confirmed_at) {
         console.log('User registered, email verification required')
         console.log('User profile created with role:', role)

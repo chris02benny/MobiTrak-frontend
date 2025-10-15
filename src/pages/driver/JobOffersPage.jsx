@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../utils/supabase';
+import DashboardLayout from '../../components/DashboardLayout';
+import { driverSidebarItems } from '../../config/driverSidebarConfig';
 import { 
   Check, 
   X, 
@@ -137,17 +139,19 @@ const JobOffersPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bgBlack text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4">Loading job offers...</p>
+      <DashboardLayout sidebarItems={driverSidebarItems} title="Job Offers">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4">Loading job offers...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-bgBlack text-white p-6">
+    <DashboardLayout sidebarItems={driverSidebarItems} title="Job Offers">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Job Offers</h1>
@@ -358,7 +362,7 @@ const JobOffersPage = () => {
           </div>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../utils/supabase';
+import DashboardLayout from '../../components/DashboardLayout';
+import { driverSidebarItems } from '../../config/driverSidebarConfig';
 
 const JobsDebugPage = () => {
   const { user } = useAuth();
@@ -83,7 +85,7 @@ const JobsDebugPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 p-8">
+    <DashboardLayout sidebarItems={driverSidebarItems} title="Jobs Debug">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-white mb-8">Jobs Debug Page</h1>
         
@@ -137,11 +139,12 @@ const JobsDebugPage = () => {
           </div>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
 export default JobsDebugPage;
+
 
 
 
