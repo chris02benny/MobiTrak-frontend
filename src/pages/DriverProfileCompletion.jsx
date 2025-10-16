@@ -149,8 +149,8 @@ const DriverProfileCompletion = () => {
   };
 
   const processLicenseImages = async () => {
-    if (!frontImage) {
-      setError('Please upload the front side of your driving license');
+    if (!frontImage || !backImage) {
+      setError('Please upload both front and back sides of your driving license');
       return;
     }
 
@@ -169,13 +169,10 @@ const DriverProfileCompletion = () => {
         throw new Error(frontResult.validation?.message || 'Invalid front side document');
       }
 
-      let backResult = null;
-      if (backImage) {
-        backResult = await ocrService.processLicenseFile(backImage);
-        
-        if (!backResult.validation?.isValid) {
-          console.warn('Back image validation failed, continuing with front only');
-        }
+      // Back side is mandatory
+      const backResult = await ocrService.processLicenseFile(backImage);
+      if (!backResult.validation?.isValid) {
+        throw new Error(backResult.validation?.message || 'Invalid back side document');
       }
 
       // Combine results from both images
@@ -791,7 +788,7 @@ const DriverProfileCompletion = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Back Side (Optional)
+                  Back Side (Required) *
                 </label>
                 <div className={`border-2 border-dashed rounded-lg p-6 text-center ${
                   backImage ? 'border-green-300 bg-green-50' : 'border-gray-300'
@@ -836,9 +833,9 @@ const DriverProfileCompletion = () => {
             <div className="text-center mt-6">
               <button
                 onClick={processLicenseImages}
-                disabled={!frontImage || ocrLoading}
+                disabled={!frontImage || !backImage || ocrLoading}
                 className={`px-8 py-3 rounded-md font-medium ${
-                  !frontImage || ocrLoading
+                  !frontImage || !backImage || ocrLoading
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}

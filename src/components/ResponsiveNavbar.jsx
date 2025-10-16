@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import { useProfilePicture } from '../hooks/useProfilePicture';
-import NotificationBell from './NotificationBell';
+// Notifications disabled until API implemented
 import {
   User,
   Settings,
@@ -51,6 +51,16 @@ const ResponsiveNavbar = ({ title = "mobiTrak" }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [isProfileDropdownOpen]);
 
+  // Keep dropdown anchored correctly while scrolling
+  useEffect(() => {
+    if (!isProfileDropdownOpen) return;
+    const handleScroll = () => {
+      calculateDropdownPosition();
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isProfileDropdownOpen]);
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -65,9 +75,9 @@ const ResponsiveNavbar = ({ title = "mobiTrak" }) => {
   const calculateDropdownPosition = () => {
     if (profileRef.current) {
       const rect = profileRef.current.getBoundingClientRect();
-      const scrollY = window.scrollY;
       setDropdownPosition({
-        top: rect.bottom + scrollY + 8, // 8px gap below button
+        // For position: fixed, use viewport coordinates (no scrollY)
+        top: rect.bottom + 8, // 8px gap below button
         right: window.innerWidth - rect.right, // Align right edge with button
       });
     }
@@ -114,8 +124,7 @@ const ResponsiveNavbar = ({ title = "mobiTrak" }) => {
                         </motion.button>
                       )}
                       
-                      {/* Notifications */}
-                      <NotificationBell />
+                      {/* Notifications removed */}
                       
                       {/* Profile dropdown for desktop */}
                       <div className="hidden md:block relative z-50" ref={profileRef}>

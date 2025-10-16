@@ -398,8 +398,8 @@ const DriverProfilePage = () => {
   };
 
   const processLicenseImages = async () => {
-    if (!frontImage) {
-      showToast('Please upload the front side of your driving license', 'error');
+    if (!frontImage || !backImage) {
+      showToast('Please upload both front and back sides of your driving license', 'error');
       return;
     }
     try {
@@ -416,30 +416,27 @@ const DriverProfilePage = () => {
       let backResult = null;
       let dlNumberMatch = true;
 
-        if (backImage) {
-          console.log('🔄 Processing back image...');
-          backResult = await ocrService.processLicenseFile(backImage);
-          console.log('🔄 Back image OCR result:', backResult);
-          console.log('🔄 Back image raw text:', backResult.raw_extracted_text);
-          
-          if (!backResult.validation?.isValid) {
-            console.warn('Back image validation failed, continuing with front only');
+      // Back side is mandatory; process and validate
+      console.log('🔄 Processing back image...');
+      backResult = await ocrService.processLicenseFile(backImage);
+      console.log('🔄 Back image OCR result:', backResult);
+      console.log('🔄 Back image raw text:', backResult.raw_extracted_text);
+      if (!backResult.validation?.isValid) {
+        throw new Error(backResult.validation?.message || 'Invalid back side document');
+      } else {
+        // Verify DL numbers match between front and back
+        const frontDL = frontResult.license_number?.toUpperCase().replace(/\s/g, '');
+        const backDL = backResult.license_number?.toUpperCase().replace(/\s/g, '');
+        if (frontDL && backDL) {
+          dlNumberMatch = frontDL === backDL;
+          if (!dlNumberMatch) {
+            console.warn('⚠️ DL numbers do not match between front and back sides');
+            showToast('Warning: DL numbers on front and back sides do not match', 'warning');
           } else {
-            // Verify DL numbers match between front and back
-            const frontDL = frontResult.license_number?.toUpperCase().replace(/\s/g, '');
-            const backDL = backResult.license_number?.toUpperCase().replace(/\s/g, '');
-
-            if (frontDL && backDL) {
-              dlNumberMatch = frontDL === backDL;
-              if (!dlNumberMatch) {
-                console.warn('⚠️ DL numbers do not match between front and back sides');
-                showToast('Warning: DL numbers on front and back sides do not match', 'warning');
-              } else {
-                console.log('✅ DL numbers match between front and back sides');
-              }
-            }
+            console.log('✅ DL numbers match between front and back sides');
           }
         }
+      }
 
       const combinedData = {
         full_name: frontResult.full_name || backResult?.full_name || '',
@@ -1629,7 +1626,7 @@ const DriverProfilePage = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Back Side (Optional)
+                  Back Side (Required) *
                 </label>
                 <div className={`border-2 border-dashed rounded-lg p-6 text-center ${
                   (backImage || profileSections.license.data.dl_back_url) ? 'border-green-500/50 bg-green-500/10' : 'border-gray-600'
@@ -1696,9 +1693,9 @@ const DriverProfilePage = () => {
             <div className="text-center mt-6">
               <button
                 onClick={processLicenseImages}
-                disabled={!frontImage || ocrLoading}
+                disabled={!frontImage || !backImage || ocrLoading}
                 className={`px-8 py-3 rounded-md font-medium ${
-                  !frontImage || ocrLoading
+                  !frontImage || !backImage || ocrLoading
                     ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                     : 'enterprise-button'
                 }`}

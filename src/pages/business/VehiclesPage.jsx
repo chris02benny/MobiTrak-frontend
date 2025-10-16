@@ -26,16 +26,28 @@ const VehiclesPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showRcReuploadModal, setShowRcReuploadModal] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [deletingVehicle, setDeletingVehicle] = useState(null);
+  const [rcReuploadVehicle, setRcReuploadVehicle] = useState(null);
   
-  // Form data states
+  // Card expansion states
+  const [expandedCards, setExpandedCards] = useState(new Set());
+  
+  // Form data states (RC OCR fields)
   const [formData, setFormData] = useState({
-    make: '',
-    model: '',
-    year: '',
-    registration_number: '',
+    registered_number: '',
+    maker_name: '',
     owner_name: '',
+    class_of_vehicle: '',
+    fuel_type: '',
+    seating_capacity: '',
+    tax_license_no: '',
+    tax_paid_from: '',
+    tax_paid_to: '',
+    date_of_registration: '',
+    fitness_valid_from: '',
+    fitness_valid_to: '',
     status: 'available'
   });
 
@@ -61,8 +73,10 @@ const VehiclesPage = () => {
 
   // Validation patterns
   const validationPatterns = {
-    registrationNumber: /^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}$/,
-    ownerName: /^[A-Za-z\s]{3,}$/
+    // Primary strict Indian RC format; fallback loose matcher added in OCR parser
+    registeredNumber: /^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}$/,
+    ownerName: /^[A-Za-z\s]{3,}$/,
+    date: /^(0?[1-9]|[12][0-9]|3[01])[\/.-](0?[1-9]|1[012])[\/.-](\d{4})$/
   };
 
   const vehicleTypes = [
@@ -155,7 +169,14 @@ const VehiclesPage = () => {
     try {
       const { data, error } = await supabase
         .from('vehicles')
-        .select('*')
+        .select(`
+          *,
+          vehicle_images (
+            id,
+            image_url,
+            image_order
+          )
+        `)
         .eq('business_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -203,38 +224,18 @@ const VehiclesPage = () => {
     };
   }, [rcBookPreview]);
 
-  // Validation functions
+  // Validation functions (updated for OCR fields)
   const validateField = useCallback((name, value) => {
-    const currentYear = new Date().getFullYear();
-
     switch (name) {
-      case 'make':
-        if (!value.trim()) return 'Make is required';
-        if (carMakes.length > 0 && !carMakes.some(make =>
-          make.toLowerCase() === value.toLowerCase()
-        )) {
-          return 'Please select a valid car make from the dropdown';
-        }
-        return '';
-
-      case 'model':
-        if (!value.trim()) return 'Model is required';
-        if (value.trim().length < 2) return 'Model must be at least 2 characters';
-        return '';
-
-      case 'year':
-        if (!value) return 'Year is required';
-        const yearNum = parseInt(value);
-        if (yearNum < 1980 || yearNum > currentYear) {
-          return `Year must be between 1980 and ${currentYear}`;
-        }
-        return '';
-
-      case 'registration_number':
+      case 'registered_number':
         if (!value.trim()) return 'Registration number is required';
-        if (!validationPatterns.registrationNumber.test(value.toUpperCase())) {
+        if (!validationPatterns.registeredNumber.test(value.toUpperCase())) {
           return 'Invalid format. Example: KA01AB1234';
         }
+        return '';
+
+      case 'maker_name':
+        if (!value.trim()) return 'Maker/Manufacturer is required';
         return '';
 
       case 'owner_name':
@@ -247,7 +248,7 @@ const VehiclesPage = () => {
       default:
         return '';
     }
-  }, [carMakes]);
+  }, []);
 
   // Handle input changes
   const handleInputChange = useCallback((e) => {
@@ -308,13 +309,13 @@ const VehiclesPage = () => {
 
   const validateRcBookFile = (file) => {
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 1 * 1024 * 1024; // 1MB
 
     if (!allowedTypes.includes(file.type)) {
       return 'Only PDF, JPG, and PNG files are allowed';
     }
     if (file.size > maxSize) {
-      return 'File size must be less than 10MB';
+      return 'File size must be less than 1MB';
     }
     return '';
   };
@@ -387,8 +388,168 @@ const VehiclesPage = () => {
     }
   };
 
+  const [ocrLoading, setOcrLoading] = useState(false);
+
+  // OCR call to ocr.space
+  const ocrExtractRc = async (file) => {
+    setOcrLoading(true);
+    try {
+      // Only attempt OCR for image files; PDFs often need conversion
+      if (!/^image\//.test(file.type)) {
+        throw new Error('Please upload an image (JPEG/PNG) for OCR');
+      }
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          const b64 = typeof result === 'string' ? result.split(',')[1] : '';
+          resolve(b64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Try backend first
+      const apiBase = import.meta.env.VITE_API_BASE;
+      if (apiBase) {
+        try {
+          const res = await fetch(`${apiBase}/api/ocr/rc`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileBase64: base64, fileType: file.type })
+          });
+          const json = await res.json();
+          if (res.ok && json?.data) return json.data;
+          throw new Error(json?.error || 'Backend OCR failed');
+        } catch (e) {
+          // fall through to direct OpenRouter if configured
+        }
+      }
+
+      // Fallback: call OpenRouter directly from frontend if key provided
+      const openrouterKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+      if (!openrouterKey) {
+        throw new Error('Set VITE_OPENROUTER_API_KEY in mobitrak-app/.env to enable OCR without backend.');
+      }
+      const payload = {
+        model: 'openai/gpt-4o-mini',
+        messages: [
+          { role: 'system', content: [{ type: 'text', text: 'You are an OCR parser. Extract the following fields from this Indian vehicle RC scan and return ONLY compact JSON with these exact keys: registered_number, maker_name, owner_name, class_of_vehicle, fuel_type, seating_capacity, tax_license_no, tax_paid_from, tax_paid_to, date_of_registration, fitness_valid_from, fitness_valid_to. Dates should be DD/MM/YYYY when present; if a field is missing, use an empty string.' }] },
+          { role: 'user', content: [
+            { type: 'text', text: 'Parse this RC image and return only the JSON.' },
+            { type: 'image_url', image_url: `data:${file.type};base64,${base64}` }
+          ]}
+        ],
+        temperature: 0
+      };
+      const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openrouterKey}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'mobiTrak RC OCR'
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data?.error?.message || 'OpenRouter OCR failed');
+      const content = data?.choices?.[0]?.message?.content;
+      const textOut = Array.isArray(content) ? content.map(p => p.text).join('\n') : (typeof content === 'string' ? content : '');
+      try {
+        return JSON.parse(textOut);
+      } catch {
+        const m = textOut.match(/\{[\s\S]*\}/);
+        if (m) return JSON.parse(m[0]);
+        throw new Error('Failed to parse OCR JSON');
+      }
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  const parseDate = (str) => {
+    if (!str) return '';
+    const m = str.match(validationPatterns.date);
+    if (!m) return '';
+    const [, dd, mm, yyyy] = m;
+    const pad = (n) => n.toString().padStart(2, '0');
+    return `${pad(dd)}/${pad(mm)}/${yyyy}`;
+  };
+
+  const parseRcText = (text) => {
+    const get = (regexes) => {
+      for (const r of regexes) {
+        const m = text.match(r);
+        if (m && m[1]) return m[1].trim();
+      }
+      return '';
+    };
+    let registered_number = get([
+      /Reg(?:istration)?\s*No\.?\s*[:\-]?\s*([A-Z]{2}\d{2}[A-Z]{1,2}\d{4})/i,
+      /Regn\.?\s*No\.?\s*[:\-]?\s*([A-Z]{2}\d{2}[A-Z]{1,2}\d{4})/i,
+    ]);
+    if (!registered_number) {
+      const loose = text.match(/([A-Z]{2}\d{2}[A-Z]{1,2}\d{4})/i);
+      registered_number = loose?.[1] || '';
+    }
+    const maker_name = get([
+      /Maker\/?Manufacturer\s*[:\-]?\s*([A-Za-z0-9 ,.()\-\/&]+)/i,
+      /Make\s*[:\-]?\s*([A-Za-z0-9 ,.()\-\/&]+)/i,
+    ]);
+    const owner_name = get([
+      /Owner\s*Name\s*[:\-]?\s*([A-Za-z ]{3,})/i,
+      /Name\s*of\s*Owner\s*[:\-]?\s*([A-Za-z ]{3,})/i,
+    ]);
+    const class_of_vehicle = get([
+      /Class\s*of\s*Vehicle\s*[:\-]?\s*([A-Za-z0-9 .\-\/]+)/i,
+    ]);
+    const fuel_type = get([
+      /Fuel\s*[:\-]?\s*([A-Za-z ]+)/i,
+      /Fuel\s*Type\s*[:\-]?\s*([A-Za-z ]+)/i,
+    ]);
+    const seating_capacity = get([
+      /Seating\s*Capacity\s*[:\-]?\s*(\d{1,3})/i,
+      /Seats\s*[:\-]?\s*(\d{1,3})/i,
+    ]);
+    const tax_license_no = get([
+      /Tax\s*Licen[cs]e\s*No\.?\s*[:\-]?\s*([A-Za-z0-9\/\-]+)/i,
+    ]);
+    const tax_paid_from = parseDate(get([
+      /Tax\s*Paid\s*From\s*[:\-]?\s*([0-9]{1,2}[\/\.-][0-9]{1,2}[\/\.-][0-9]{4})/i,
+    ]));
+    const tax_paid_to = parseDate(get([
+      /Tax\s*Paid\s*To\s*[:\-]?\s*([0-9]{1,2}[\/\.-][0-9]{1,2}[\/\.-][0-9]{4})/i,
+    ]));
+    const date_of_registration = parseDate(get([
+      /Date\s*of\s*Registration\s*[:\-]?\s*([0-9]{1,2}[\/\.-][0-9]{1,2}[\/\.-][0-9]{4})/i,
+      /Dt\.?\s*of\s*Regn\.?\s*[:\-]?\s*([0-9]{1,2}[\/\.-][0-9]{1,2}[\/\.-][0-9]{4})/i,
+    ]));
+    const fitness_valid_from = parseDate(get([
+      /Fitness\s*Valid\s*From\s*[:\-]?\s*([0-9]{1,2}[\/\.-][0-9]{1,2}[\/\.-][0-9]{4})/i,
+    ]));
+    const fitness_valid_to = parseDate(get([
+      /Fitness\s*Valid\s*To\s*[:\-]?\s*([0-9]{1,2}[\/\.-][0-9]{1,2}[\/\.-][0-9]{4})/i,
+    ]));
+
+    return {
+      registered_number,
+      maker_name,
+      owner_name,
+      class_of_vehicle,
+      fuel_type,
+      seating_capacity,
+      tax_license_no,
+      tax_paid_from,
+      tax_paid_to,
+      date_of_registration,
+      fitness_valid_from,
+      fitness_valid_to
+    };
+  };
+
   // Process RC book file
-  const processRcBookFile = (file) => {
+  const processRcBookFile = async (file) => {
     const error = validateRcBookFile(file);
     if (error) {
       showToast(error, 'error');
@@ -398,6 +559,18 @@ const VehiclesPage = () => {
     // Create preview URL for PDF
     const previewUrl = URL.createObjectURL(file);
     setRcBookPreview(previewUrl);
+    try {
+      const maybeData = await ocrExtractRc(file);
+      const extracted = typeof maybeData === 'string' ? parseRcText(maybeData) : maybeData;
+      setFormData(prev => ({
+        ...prev,
+        ...extracted,
+        registered_number: (extracted.registered_number || '').toUpperCase()
+      }));
+      showToast('RC details extracted. Please verify and save.', 'success');
+    } catch (e) {
+      showToast(e.message || 'Failed to extract RC details', 'error');
+    }
   };
 
   // Remove RC book file
@@ -462,19 +635,52 @@ const VehiclesPage = () => {
         rcBookUrl = publicUrl;
       }
 
-      // Insert vehicle data into Supabase
+      // Normalize fuel type to satisfy DB check constraint
+      const allowedFuelTypes = ['petrol', 'diesel', 'electric', 'hybrid', 'cng', 'lpg'];
+      const normalizeFuelType = (raw) => {
+        if (!raw) return null;
+        const v = String(raw).toLowerCase().trim();
+        // common variants mapping
+        const map = {
+          petrol: 'petrol',
+          gasoline: 'petrol',
+          gas: 'petrol',
+          diesel: 'diesel',
+          ev: 'electric',
+          electric: 'electric',
+          electricity: 'electric',
+          hybrid: 'hybrid',
+          cng: 'cng',
+          'compressed natural gas': 'cng',
+          lpg: 'lpg',
+          'liquefied petroleum gas': 'lpg'
+        };
+        const mapped = map[v] || v;
+        return allowedFuelTypes.includes(mapped) ? mapped : null;
+      };
+
+      const normalizedFuel = normalizeFuelType(formData.fuel_type);
+
+      // Insert vehicle data into Supabase (new OCR fields)
       const { data: vehicleData, error } = await supabase
         .from('vehicles')
         .insert({
-          manufacturer: formData.make,
-          model: formData.model,
-          year: parseInt(formData.year),
-          registration_number: formData.registration_number,
+          registered_number: formData.registered_number,
+          maker_name: formData.maker_name,
           owner_name: formData.owner_name,
+          class_of_vehicle: formData.class_of_vehicle || null,
+          fuel_type: normalizedFuel,
+          seating_capacity: formData.seating_capacity ? parseInt(formData.seating_capacity) : null,
+          tax_license_no: formData.tax_license_no || null,
+          tax_paid_from: formData.tax_paid_from || null,
+          tax_paid_to: formData.tax_paid_to || null,
+          date_of_registration: formData.date_of_registration || null,
+          fitness_valid_from: formData.fitness_valid_from || null,
+          fitness_valid_to: formData.fitness_valid_to || null,
           status: formData.status,
           business_id: user.id,
           vehicle_image_url: vehicleImageUrls.length > 0 ? vehicleImageUrls[0] : null,
-          rc_book_front_url: rcBookUrl
+          rc_book_url: rcBookUrl
         })
         .select()
         .single();
@@ -509,14 +715,21 @@ const VehiclesPage = () => {
     }
   };
 
-  // Reset form
+  // Reset form to OCR fields
   const resetForm = () => {
     setFormData({
-      make: '',
-      model: '',
-      year: '',
-      registration_number: '',
+      registered_number: '',
+      maker_name: '',
       owner_name: '',
+      class_of_vehicle: '',
+      fuel_type: '',
+      seating_capacity: '',
+      tax_license_no: '',
+      tax_paid_from: '',
+      tax_paid_to: '',
+      date_of_registration: '',
+      fitness_valid_from: '',
+      fitness_valid_to: '',
       status: 'available'
     });
     setErrors({});
@@ -611,14 +824,136 @@ const VehiclesPage = () => {
     setShowDeleteModal(true);
   };
 
+  // Toggle card expansion
+  const toggleCardExpansion = (vehicleId) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(vehicleId)) {
+        newSet.delete(vehicleId);
+      } else {
+        newSet.add(vehicleId);
+      }
+      return newSet;
+    });
+  };
+
+  // Open RC reupload modal
+  const openRcReuploadModal = (vehicle) => {
+    setRcReuploadVehicle(vehicle);
+    setFormData({
+      registered_number: vehicle.registered_number || '',
+      maker_name: vehicle.maker_name || '',
+      owner_name: vehicle.owner_name || '',
+      class_of_vehicle: vehicle.class_of_vehicle || '',
+      fuel_type: vehicle.fuel_type || '',
+      seating_capacity: vehicle.seating_capacity || '',
+      tax_license_no: vehicle.tax_license_no || '',
+      tax_paid_from: vehicle.tax_paid_from || '',
+      tax_paid_to: vehicle.tax_paid_to || '',
+      date_of_registration: vehicle.date_of_registration || '',
+      fitness_valid_from: vehicle.fitness_valid_from || '',
+      fitness_valid_to: vehicle.fitness_valid_to || '',
+      status: vehicle.status || 'available'
+    });
+    setShowRcReuploadModal(true);
+  };
+
+  // Handle RC reupload
+  const handleRcReupload = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // Upload new RC book to Supabase storage
+      let rcBookUrl = null;
+      if (rcBook) {
+        const fileExt = rcBook.name.split('.').pop();
+        const fileName = `${user.id}/rc-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('vehicle-files')
+          .upload(fileName, rcBook);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('vehicle-files')
+          .getPublicUrl(fileName);
+
+        rcBookUrl = publicUrl;
+      }
+
+      // Normalize fuel type to satisfy DB check constraint
+      const allowedFuelTypes = ['petrol', 'diesel', 'electric', 'hybrid', 'cng', 'lpg'];
+      const normalizeFuelType = (raw) => {
+        if (!raw) return null;
+        const v = String(raw).toLowerCase().trim();
+        const map = {
+          petrol: 'petrol',
+          gasoline: 'petrol',
+          gas: 'petrol',
+          diesel: 'diesel',
+          ev: 'electric',
+          electric: 'electric',
+          electricity: 'electric',
+          hybrid: 'hybrid',
+          cng: 'cng',
+          'compressed natural gas': 'cng',
+          lpg: 'lpg',
+          'liquefied petroleum gas': 'lpg'
+        };
+        const mapped = map[v] || v;
+        return allowedFuelTypes.includes(mapped) ? mapped : null;
+      };
+
+      const normalizedFuel = normalizeFuelType(formData.fuel_type);
+
+      // Update vehicle data in Supabase
+      const { error } = await supabase
+        .from('vehicles')
+        .update({
+          registered_number: formData.registered_number,
+          maker_name: formData.maker_name,
+          owner_name: formData.owner_name,
+          class_of_vehicle: formData.class_of_vehicle || null,
+          fuel_type: normalizedFuel,
+          seating_capacity: formData.seating_capacity ? parseInt(formData.seating_capacity) : null,
+          tax_license_no: formData.tax_license_no || null,
+          tax_paid_from: formData.tax_paid_from || null,
+          tax_paid_to: formData.tax_paid_to || null,
+          date_of_registration: formData.date_of_registration || null,
+          fitness_valid_from: formData.fitness_valid_from || null,
+          fitness_valid_to: formData.fitness_valid_to || null,
+          rc_book_url: rcBookUrl || rcReuploadVehicle.rc_book_url
+        })
+        .eq('id', rcReuploadVehicle.id)
+        .eq('business_id', user.id);
+
+      if (error) throw error;
+
+      showToast('Vehicle details updated successfully!', 'success');
+      setShowRcReuploadModal(false);
+      setRcReuploadVehicle(null);
+      resetForm();
+      fetchVehicles();
+    } catch (error) {
+      console.error('Error updating vehicle:', error);
+      showToast('Error updating vehicle details', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Filter vehicles
   const filteredVehicles = vehicles.filter(vehicle => {
     const matchesLabel = !filterLabel || vehicle.label_id === filterLabel;
     const matchesStatus = !filterStatus || vehicle.status === filterStatus;
     const matchesSearch = !searchTerm || 
-      vehicle.manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.registration_number.toLowerCase().includes(searchTerm.toLowerCase());
+      (vehicle.maker_name && vehicle.maker_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (vehicle.manufacturer && vehicle.manufacturer.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (vehicle.model && vehicle.model.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (vehicle.registered_number && vehicle.registered_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (vehicle.registration_number && vehicle.registration_number.toLowerCase().includes(searchTerm.toLowerCase()));
     
     return matchesLabel && matchesStatus && matchesSearch;
   });
@@ -648,7 +983,7 @@ const VehiclesPage = () => {
 
   // Check if form is valid
   const isFormValid = useMemo(() => {
-    const requiredFields = ['make', 'model', 'year', 'registration_number', 'owner_name'];
+    const requiredFields = ['registered_number', 'maker_name', 'owner_name'];
     const allFieldsFilled = requiredFields.every(field => formData[field]?.toString().trim());
     const noErrors = requiredFields.every(field => !errors[field]);
     return allFieldsFilled && noErrors;
@@ -836,72 +1171,228 @@ const VehiclesPage = () => {
       </div>
 
       {/* Vehicles Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="space-y-4">
         <AnimatePresence>
-          {filteredVehicles.map((vehicle) => (
-            <motion.div
-              key={vehicle.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <DashboardCard className="p-6 hover:bg-white/15 transition-all duration-300 group">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white group-hover:text-primary transition-colors">
-                      {vehicle.manufacturer} {vehicle.model}
-                    </h3>
-                    <p className="text-gray-400 text-sm">{vehicle.registration_number}</p>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => openEditModal(vehicle)}
-                      className="p-2 text-gray-400 hover:text-primary transition-colors"
-                      title="Edit vehicle"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => openDeleteModal(vehicle)}
-                      className="p-2 text-gray-400 hover:text-red-400 transition-colors"
-                      title="Delete vehicle"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+          {filteredVehicles.map((vehicle) => {
+            const isExpanded = expandedCards.has(vehicle.id);
+            return (
+              <motion.div
+                key={vehicle.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <DashboardCard className="p-4 hover:bg-white/15 transition-all duration-300 group cursor-pointer" onClick={() => toggleCardExpansion(vehicle.id)}>
+                  {/* Simplified View */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      {/* Vehicle Image */}
+                      <div className="w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                        {vehicle.vehicle_images && vehicle.vehicle_images.length > 0 ? (
+                          <img
+                            src={vehicle.vehicle_images[0].image_url}
+                            alt={`${vehicle.maker_name || vehicle.manufacturer} ${vehicle.model}`}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : vehicle.vehicle_image_url ? (
+                          <img
+                            src={vehicle.vehicle_image_url}
+                            alt={`${vehicle.maker_name || vehicle.manufacturer} ${vehicle.model}`}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <Car className="w-8 h-8 text-gray-500" />
+                        )}
+                      </div>
 
-                {/* Status Badge */}
-                <div className="mb-4">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(vehicle.status)}`}>
-                    {getStatusLabel(vehicle.status)}
-                  </span>
-                </div>
+                      {/* Basic Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-white group-hover:text-primary transition-colors truncate">
+                          {vehicle.maker_name || vehicle.manufacturer} {vehicle.model}
+                        </h3>
+                        <p className="text-gray-400 text-sm truncate">
+                          {vehicle.registered_number || vehicle.registration_number || 'No registration'}
+                        </p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(vehicle.status)}`}>
+                            {getStatusLabel(vehicle.status)}
+                          </span>
+                          {vehicle.fuel_type && (
+                            <span className="text-xs text-gray-400">
+                              {vehicle.fuel_type.charAt(0).toUpperCase() + vehicle.fuel_type.slice(1)}
+                            </span>
+                          )}
+                          {vehicle.seating_capacity && (
+                            <span className="text-xs text-gray-400">
+                              {vehicle.seating_capacity} seats
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
-                {/* Vehicle Image */}
-                <div className="mb-4">
-                  <div className="w-full h-40 bg-gray-700 rounded-lg flex items-center justify-center">
-                    {vehicle.vehicle_image_url ? (
-                      <img
-                        src={vehicle.vehicle_image_url}
-                        alt={`${vehicle.manufacturer} ${vehicle.model}`}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                    ) : (
-                      <svg className="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    )}
+                    {/* Action Buttons */}
+                    <div className="flex items-center space-x-2">
+                      {/* RC Reupload Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openRcReuploadModal(vehicle);
+                        }}
+                        className="flex items-center space-x-2 px-4 py-2 bg-primary hover:bg-primary/80 text-black rounded-full transition-colors duration-200"
+                        title="Reupload RC"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span className="text-sm font-medium">Reupload RC</span>
+                      </button>
+                      
+                      {/* Delete Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeleteModal(vehicle);
+                        }}
+                        className="flex items-center space-x-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors duration-200"
+                        title="Delete vehicle"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span className="text-sm font-medium">Delete</span>
+                      </button>
+
+                      {/* Expand/Collapse Icon */}
+                      <motion.div
+                        animate={{ rotate: isExpanded ? 180 : 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="ml-2"
+                      >
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </motion.div>
+                    </div>
                   </div>
-                </div>
-              </DashboardCard>
-            </motion.div>
-          ))}
+
+                  {/* Detailed View - Expandable */}
+                  <motion.div
+                    initial={false}
+                    animate={{ 
+                      height: isExpanded ? "auto" : 0,
+                      opacity: isExpanded ? 1 : 0
+                    }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-6 pt-6 border-t border-gray-700">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Left Column - Vehicle Images */}
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-semibold text-white">Vehicle Images</h4>
+                          {vehicle.vehicle_images && vehicle.vehicle_images.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-2">
+                              {vehicle.vehicle_images
+                                .sort((a, b) => a.image_order - b.image_order)
+                                .map((img, index) => (
+                                <div key={img.id} className="relative">
+                                  <img
+                                    src={img.image_url}
+                                    alt={`${vehicle.maker_name || vehicle.manufacturer} ${vehicle.model} - Image ${index + 1}`}
+                                    className="w-full h-32 object-cover rounded-lg border border-gray-600"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : vehicle.vehicle_image_url ? (
+                            <div className="w-full h-48 bg-gray-700 rounded-lg flex items-center justify-center">
+                              <img
+                                src={vehicle.vehicle_image_url}
+                                alt={`${vehicle.maker_name || vehicle.manufacturer} ${vehicle.model}`}
+                                className="w-full h-full object-cover rounded-lg"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-full h-48 bg-gray-700 rounded-lg flex items-center justify-center">
+                              <svg className="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Right Column - Vehicle Details */}
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-semibold text-white">Vehicle Details</h4>
+                          <div className="space-y-3">
+                            {/* Registered Number */}
+                            <div>
+                              <label className="text-sm font-medium text-gray-400">Registered Number</label>
+                              <p className="text-lg font-semibold text-white">
+                                {vehicle.registered_number || vehicle.registration_number || 'N/A'}
+                              </p>
+                            </div>
+
+                            {/* Fuel Type */}
+                            <div>
+                              <label className="text-sm font-medium text-gray-400">Fuel Type</label>
+                              <p className="text-lg text-white">
+                                {vehicle.fuel_type ? vehicle.fuel_type.charAt(0).toUpperCase() + vehicle.fuel_type.slice(1) : 'N/A'}
+                              </p>
+                            </div>
+
+                            {/* Seating Capacity */}
+                            <div>
+                              <label className="text-sm font-medium text-gray-400">Seating Capacity</label>
+                              <p className="text-lg text-white">
+                                {vehicle.seating_capacity ? `${vehicle.seating_capacity} seats` : 'N/A'}
+                              </p>
+                            </div>
+
+                            {/* Additional Details */}
+                            {vehicle.owner_name && (
+                              <div>
+                                <label className="text-sm font-medium text-gray-400">Owner Name</label>
+                                <p className="text-lg text-white">{vehicle.owner_name}</p>
+                              </div>
+                            )}
+
+                            {vehicle.class_of_vehicle && (
+                              <div>
+                                <label className="text-sm font-medium text-gray-400">Vehicle Class</label>
+                                <p className="text-lg text-white">{vehicle.class_of_vehicle}</p>
+                              </div>
+                            )}
+
+                            {vehicle.date_of_registration && (
+                              <div>
+                                <label className="text-sm font-medium text-gray-400">Registration Date</label>
+                                <p className="text-lg text-white">{vehicle.date_of_registration}</p>
+                              </div>
+                            )}
+
+                            {vehicle.tax_license_no && (
+                              <div>
+                                <label className="text-sm font-medium text-gray-400">Tax License No</label>
+                                <p className="text-lg text-white">{vehicle.tax_license_no}</p>
+                              </div>
+                            )}
+
+                            {vehicle.fitness_valid_to && (
+                              <div>
+                                <label className="text-sm font-medium text-gray-400">Fitness Valid To</label>
+                                <p className="text-lg text-white">{vehicle.fitness_valid_to}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </DashboardCard>
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
       </div>
 
@@ -953,154 +1444,72 @@ const VehiclesPage = () => {
         }}
         onConfirm={handleSubmit}
         title="Add Vehicle"
-        maxWidth="max-w-4xl"
+        maxWidth="max-w-5xl"
         maxHeight="max-h-[90vh]"
         disabled={!isFormValid}
         message={
           <div className="space-y-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="relative">
-                <label htmlFor="make" className="block text-sm font-medium text-gray-300 mb-1">
-                  Manufacturer *
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="make"
-                    id="make"
-                    value={formData.make}
-                    onChange={handleInputChange}
-                    onFocus={() => {
-                      if (carMakes.length === 0) fetchCarMakes();
-                      if (formData.make && filteredMakes.length > 0) {
-                        setShowMakeDropdown(true);
-                      }
-                    }}
-                    onBlur={() => {
-                      setTimeout(() => setShowMakeDropdown(false), 200);
-                    }}
-                    className={`enterprise-input w-full ${
-                      touched.make && errors.make ? 'border-red-500' : ''
-                    }`}
-                    placeholder="e.g., Toyota"
-                    required
-                  />
-                  {makesLoading && (
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full"
-                      />
-                    </div>
-                  )}
-
-                  <AnimatePresence>
-                    {showMakeDropdown && filteredMakes.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto"
-                      >
-                        {filteredMakes.slice(0, 10).map((make, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            onClick={() => handleMakeSelect(make)}
-                            className="w-full text-left px-4 py-2 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors"
-                          >
-                            {make}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                <ErrorMessage error={touched.make ? errors.make : ''} />
-              </div>
-              <div>
-                <label htmlFor="model" className="block text-sm font-medium text-gray-300 mb-1">
-                  Model *
-                </label>
-                <input
-                  type="text"
-                  name="model"
-                  id="model"
-                  value={formData.model}
-                  onChange={handleInputChange}
-                  className={`enterprise-input w-full ${
-                    touched.model && errors.model ? 'border-red-500' : ''
-                  }`}
-                  placeholder="e.g., Camry"
-                  required
-                />
-                <ErrorMessage error={touched.model ? errors.model : ''} />
-              </div>
-            </div>
-
+            {/* OCR Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label htmlFor="year" className="block text-sm font-medium text-gray-300 mb-1">
-                  Year *
-                </label>
-                <input
-                  type="number"
-                  name="year"
-                  id="year"
-                  value={formData.year}
-                  onChange={handleInputChange}
-                  className={`enterprise-input w-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
-                    touched.year && errors.year ? 'border-red-500' : ''
-                  }`}
-                  placeholder="e.g., 2020"
-                  min="1980"
-                  max={new Date().getFullYear()}
-                  required
-                />
-                <ErrorMessage error={touched.year ? errors.year : ''} />
+                <label htmlFor="registered_number" className="block text-sm font-medium text-gray-300 mb-1">Registered Number *</label>
+                <input type="text" id="registered_number" name="registered_number" value={formData.registered_number} onChange={handleInputChange} onInput={(e)=>{e.target.value=e.target.value.toUpperCase();}} className={`enterprise-input w-full ${touched.registered_number && errors.registered_number ? 'border-red-500':''}`} placeholder="e.g., KL05AK1233" required />
+                <ErrorMessage error={touched.registered_number ? errors.registered_number : ''} />
               </div>
               <div>
-                <label htmlFor="registration_number" className="block text-sm font-medium text-gray-300 mb-1">
-                  Registration Number *
-                </label>
-                <input
-                  type="text"
-                  name="registration_number"
-                  id="registration_number"
-                  value={formData.registration_number}
-                  onChange={handleInputChange}
-                  onInput={(e) => {
-                    e.target.value = e.target.value.toUpperCase();
-                  }}
-                  className={`enterprise-input w-full ${
-                    touched.registration_number && errors.registration_number ? 'border-red-500' : ''
-                  }`}
-                  placeholder="e.g., KA01AB1234"
-                  maxLength="10"
-                  required
-                />
-                <ErrorMessage error={touched.registration_number ? errors.registration_number : ''} />
+                <label htmlFor="maker_name" className="block text-sm font-medium text-gray-300 mb-1">Maker/Manufacturer *</label>
+                <input type="text" id="maker_name" name="maker_name" value={formData.maker_name} onChange={handleInputChange} className={`enterprise-input w-full ${touched.maker_name && errors.maker_name ? 'border-red-500':''}`} placeholder="e.g., Ashok Leyland Ltd" required />
+                <ErrorMessage error={touched.maker_name ? errors.maker_name : ''} />
               </div>
             </div>
-
-            <div>
-              <label htmlFor="owner_name" className="block text-sm font-medium text-gray-300 mb-1">
-                Owner Name *
-              </label>
-              <input
-                type="text"
-                name="owner_name"
-                id="owner_name"
-                value={formData.owner_name}
-                onChange={handleInputChange}
-                className={`enterprise-input w-full ${
-                  touched.owner_name && errors.owner_name ? 'border-red-500' : ''
-                }`}
-                placeholder="e.g., John Doe"
-                required
-              />
-              <ErrorMessage error={touched.owner_name ? errors.owner_name : ''} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="owner_name" className="block text-sm font-medium text-gray-300 mb-1">Owner Name *</label>
+                <input type="text" id="owner_name" name="owner_name" value={formData.owner_name} onChange={handleInputChange} className={`enterprise-input w-full ${touched.owner_name && errors.owner_name ? 'border-red-500':''}`} placeholder="e.g., Thomas Thomas" required />
+                <ErrorMessage error={touched.owner_name ? errors.owner_name : ''} />
+              </div>
+              <div>
+                <label htmlFor="class_of_vehicle" className="block text-sm font-medium text-gray-300 mb-1">Class of Vehicle</label>
+                <input type="text" id="class_of_vehicle" name="class_of_vehicle" value={formData.class_of_vehicle} onChange={handleInputChange} className="enterprise-input w-full" placeholder="e.g., HMPV-Cong. Carrg" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label htmlFor="fuel_type" className="block text-sm font-medium text-gray-300 mb-1">Fuel Type</label>
+                <input type="text" id="fuel_type" name="fuel_type" value={formData.fuel_type} onChange={handleInputChange} className="enterprise-input w-full" placeholder="e.g., Diesel" />
+              </div>
+              <div>
+                <label htmlFor="seating_capacity" className="block text-sm font-medium text-gray-300 mb-1">Seating Capacity</label>
+                <input type="number" id="seating_capacity" name="seating_capacity" value={formData.seating_capacity} onChange={handleInputChange} className="enterprise-input w-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" placeholder="e.g., 50" />
+              </div>
+              <div>
+                <label htmlFor="tax_license_no" className="block text-sm font-medium text-gray-300 mb-1">Tax License No</label>
+                <input type="text" id="tax_license_no" name="tax_license_no" value={formData.tax_license_no} onChange={handleInputChange} className="enterprise-input w-full" placeholder="e.g., 222/490474/2019" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label htmlFor="tax_paid_from" className="block text-sm font-medium text-gray-300 mb-1">Tax Paid From</label>
+                <input type="text" id="tax_paid_from" name="tax_paid_from" value={formData.tax_paid_from} onChange={handleInputChange} className="enterprise-input w-full" placeholder="DD/MM/YYYY" />
+              </div>
+              <div>
+                <label htmlFor="tax_paid_to" className="block text-sm font-medium text-gray-300 mb-1">Tax Paid To</label>
+                <input type="text" id="tax_paid_to" name="tax_paid_to" value={formData.tax_paid_to} onChange={handleInputChange} className="enterprise-input w-full" placeholder="DD/MM/YYYY" />
+              </div>
+              <div>
+                <label htmlFor="date_of_registration" className="block text-sm font-medium text-gray-300 mb-1">Date of Registration</label>
+                <input type="text" id="date_of_registration" name="date_of_registration" value={formData.date_of_registration} onChange={handleInputChange} className="enterprise-input w-full" placeholder="DD/MM/YYYY" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="fitness_valid_from" className="block text-sm font-medium text-gray-300 mb-1">Fitness Valid From</label>
+                <input type="text" id="fitness_valid_from" name="fitness_valid_from" value={formData.fitness_valid_from} onChange={handleInputChange} className="enterprise-input w-full" placeholder="DD/MM/YYYY" />
+              </div>
+              <div>
+                <label htmlFor="fitness_valid_to" className="block text-sm font-medium text-gray-300 mb-1">Fitness Valid To</label>
+                <input type="text" id="fitness_valid_to" name="fitness_valid_to" value={formData.fitness_valid_to} onChange={handleInputChange} className="enterprise-input w-full" placeholder="DD/MM/YYYY" />
+              </div>
             </div>
 
             <div>
@@ -1227,7 +1636,7 @@ const VehiclesPage = () => {
                 />
               </div>
               <div className="text-xs text-gray-400 mt-2">
-                PDF, JPG, or PNG files under 10MB
+                PDF, JPG, or PNG files under 1MB (OCR applied automatically)
               </div>
             </div>
           </div>
@@ -1361,6 +1770,159 @@ const VehiclesPage = () => {
       />
 
 
+      {/* RC Reupload Modal */}
+      <ConfirmationModal
+        isOpen={showRcReuploadModal}
+        onClose={() => {
+          setShowRcReuploadModal(false);
+          setRcReuploadVehicle(null);
+          resetForm();
+        }}
+        onConfirm={handleRcReupload}
+        title="Update Vehicle Details"
+        maxWidth="max-w-5xl"
+        maxHeight="max-h-[90vh]"
+        disabled={!isFormValid}
+        message={
+          <div className="space-y-2">
+            {/* OCR Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="rc-registered_number" className="block text-sm font-medium text-gray-300 mb-1">Registered Number *</label>
+                <input type="text" id="rc-registered_number" name="registered_number" value={formData.registered_number} onChange={handleInputChange} onInput={(e)=>{e.target.value=e.target.value.toUpperCase();}} className={`enterprise-input w-full ${touched.registered_number && errors.registered_number ? 'border-red-500':''}`} placeholder="e.g., KL05AK1233" required />
+                <ErrorMessage error={touched.registered_number ? errors.registered_number : ''} />
+              </div>
+              <div>
+                <label htmlFor="rc-maker_name" className="block text-sm font-medium text-gray-300 mb-1">Maker/Manufacturer *</label>
+                <input type="text" id="rc-maker_name" name="maker_name" value={formData.maker_name} onChange={handleInputChange} className={`enterprise-input w-full ${touched.maker_name && errors.maker_name ? 'border-red-500':''}`} placeholder="e.g., Ashok Leyland Ltd" required />
+                <ErrorMessage error={touched.maker_name ? errors.maker_name : ''} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="rc-owner_name" className="block text-sm font-medium text-gray-300 mb-1">Owner Name *</label>
+                <input type="text" id="rc-owner_name" name="owner_name" value={formData.owner_name} onChange={handleInputChange} className={`enterprise-input w-full ${touched.owner_name && errors.owner_name ? 'border-red-500':''}`} placeholder="e.g., Thomas Thomas" required />
+                <ErrorMessage error={touched.owner_name ? errors.owner_name : ''} />
+              </div>
+              <div>
+                <label htmlFor="rc-class_of_vehicle" className="block text-sm font-medium text-gray-300 mb-1">Class of Vehicle</label>
+                <input type="text" id="rc-class_of_vehicle" name="class_of_vehicle" value={formData.class_of_vehicle} onChange={handleInputChange} className="enterprise-input w-full" placeholder="e.g., HMPV-Cong. Carrg" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label htmlFor="rc-fuel_type" className="block text-sm font-medium text-gray-300 mb-1">Fuel Type</label>
+                <input type="text" id="rc-fuel_type" name="fuel_type" value={formData.fuel_type} onChange={handleInputChange} className="enterprise-input w-full" placeholder="e.g., Diesel" />
+              </div>
+              <div>
+                <label htmlFor="rc-seating_capacity" className="block text-sm font-medium text-gray-300 mb-1">Seating Capacity</label>
+                <input type="number" id="rc-seating_capacity" name="seating_capacity" value={formData.seating_capacity} onChange={handleInputChange} className="enterprise-input w-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" placeholder="e.g., 50" />
+              </div>
+              <div>
+                <label htmlFor="rc-tax_license_no" className="block text-sm font-medium text-gray-300 mb-1">Tax License No</label>
+                <input type="text" id="rc-tax_license_no" name="tax_license_no" value={formData.tax_license_no} onChange={handleInputChange} className="enterprise-input w-full" placeholder="e.g., 222/490474/2019" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label htmlFor="rc-tax_paid_from" className="block text-sm font-medium text-gray-300 mb-1">Tax Paid From</label>
+                <input type="text" id="rc-tax_paid_from" name="tax_paid_from" value={formData.tax_paid_from} onChange={handleInputChange} className="enterprise-input w-full" placeholder="DD/MM/YYYY" />
+              </div>
+              <div>
+                <label htmlFor="rc-tax_paid_to" className="block text-sm font-medium text-gray-300 mb-1">Tax Paid To</label>
+                <input type="text" id="rc-tax_paid_to" name="tax_paid_to" value={formData.tax_paid_to} onChange={handleInputChange} className="enterprise-input w-full" placeholder="DD/MM/YYYY" />
+              </div>
+              <div>
+                <label htmlFor="rc-date_of_registration" className="block text-sm font-medium text-gray-300 mb-1">Date of Registration</label>
+                <input type="text" id="rc-date_of_registration" name="date_of_registration" value={formData.date_of_registration} onChange={handleInputChange} className="enterprise-input w-full" placeholder="DD/MM/YYYY" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="rc-fitness_valid_from" className="block text-sm font-medium text-gray-300 mb-1">Fitness Valid From</label>
+                <input type="text" id="rc-fitness_valid_from" name="fitness_valid_from" value={formData.fitness_valid_from} onChange={handleInputChange} className="enterprise-input w-full" placeholder="DD/MM/YYYY" />
+              </div>
+              <div>
+                <label htmlFor="rc-fitness_valid_to" className="block text-sm font-medium text-gray-300 mb-1">Fitness Valid To</label>
+                <input type="text" id="rc-fitness_valid_to" name="fitness_valid_to" value={formData.fitness_valid_to} onChange={handleInputChange} className="enterprise-input w-full" placeholder="DD/MM/YYYY" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                RC Book (PDF/Image) - Optional
+              </label>
+              <div
+                className="border-2 border-dashed border-gray-600 rounded-lg p-3 text-center hover:border-gray-500 transition-colors"
+              >
+                {!rcBook ? (
+                  <div
+                    className="cursor-pointer"
+                    onDragOver={handleRcBookDragOver}
+                    onDrop={handleRcBookDrop}
+                    onClick={() => document.getElementById('rc-reupload-book').click()}
+                  >
+                    <div className="flex flex-col items-center">
+                      <FileText className="w-8 h-8 text-gray-400 mb-2" />
+                      <p className="text-gray-300 mb-1 text-sm">Drag & Drop new RC book here</p>
+                      <p className="text-gray-500 text-xs mb-2">OR</p>
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 text-sm bg-primary hover:bg-primary/80 text-black rounded-md transition-colors"
+                      >
+                        Browse Files
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-2"
+                  >
+                    <div className="text-sm text-green-400 flex items-center justify-center">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      File uploaded: {rcBook.name}
+                    </div>
+                    <div className="w-full h-20 bg-gray-800 rounded border border-gray-600 flex items-center justify-center">
+                      <div className="text-center">
+                        <FileText className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                        <p className="text-xs text-gray-400">PDF Document</p>
+                        <p className="text-xs text-gray-500 truncate max-w-32">{rcBook.name}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeRcBook}
+                      className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </motion.div>
+                )}
+                <input
+                  type="file"
+                  name="rc-reupload-book"
+                  id="rc-reupload-book"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleRcBookUpload}
+                  className="hidden"
+                />
+              </div>
+              <div className="text-xs text-gray-400 mt-2">
+                PDF, JPG, or PNG files under 1MB (OCR applied automatically)
+              </div>
+            </div>
+          </div>
+        }
+        confirmText="Update Vehicle"
+        cancelText="Cancel"
+        confirmButtonClass="bg-primary hover:bg-primary/80 text-black"
+        loading={loading}
+      />
+
       {/* Upgrade Modal */}
       <UpgradeModal
         isOpen={showUpgradeModal}
@@ -1373,3 +1935,4 @@ const VehiclesPage = () => {
 };
 
 export default VehiclesPage;
+

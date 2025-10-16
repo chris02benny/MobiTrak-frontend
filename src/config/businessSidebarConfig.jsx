@@ -10,8 +10,7 @@ export const businessSidebarItems = [
       </svg>
     ), 
     label: 'Overview', 
-    path: '/dashboard/business',
-    onClick: () => window.location.href = '/dashboard/business' 
+    path: '/dashboard/business'
   },
   { 
     id: 'profile',
@@ -23,8 +22,7 @@ export const businessSidebarItems = [
       </svg>
     ), 
     label: 'Profile', 
-    path: '/business/profile',
-    onClick: () => window.location.href = '/business/profile' 
+    path: '/business/profile'
   },
   { 
     id: 'vehicles',
@@ -34,8 +32,7 @@ export const businessSidebarItems = [
       </svg>
     ), 
     label: 'Vehicles', 
-    path: '/business/vehicles',
-    onClick: () => window.location.href = '/business/vehicles' 
+    path: '/business/vehicles'
   },
   { 
     id: 'driver-management',
@@ -45,8 +42,7 @@ export const businessSidebarItems = [
       </svg>
     ), 
     label: 'Driver Management', 
-    path: '/business/drivers',
-    onClick: () => window.location.href = '/business/drivers' 
+    path: '/business/drivers'
   },
   { 
     id: 'hire-drivers',
@@ -56,8 +52,7 @@ export const businessSidebarItems = [
       </svg>
     ), 
     label: 'Hire Drivers', 
-    path: '/business/hire-drivers',
-    onClick: () => window.location.href = '/business/hire-drivers' 
+    path: '/business/hire-drivers'
   },
   { 
     id: 'analytics',
@@ -67,8 +62,7 @@ export const businessSidebarItems = [
       </svg>
     ), 
     label: 'Analytics', 
-    path: '/business/analytics',
-    onClick: () => {} 
+    path: '/business/analytics'
   },
     { 
       id: 'maintenance',
@@ -79,8 +73,7 @@ export const businessSidebarItems = [
         </svg>
       ), 
       label: 'Maintenance', 
-      path: '/business/maintenance',
-      onClick: () => {} 
+      path: '/business/maintenance'
     },
     { 
       id: 'reports',
@@ -90,7 +83,6 @@ export const businessSidebarItems = [
         </svg>
       ), 
       label: 'Reports', 
-      path: '/business/reports',
-      onClick: () => {} 
+      path: '/business/reports'
     },
   ];

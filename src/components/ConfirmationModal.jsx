@@ -34,10 +34,22 @@ const ConfirmationModal = ({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className={`relative enterprise-modal p-6 ${maxWidth} w-full mx-4 ${maxHeight} overflow-hidden`}
+          className={`relative enterprise-modal p-6 ${maxWidth} w-full mx-4 ${maxHeight} overflow-auto`}
         >
           <div className="h-full flex flex-col">
-            <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+
+            <h3 className="text-lg font-semibold text-white mb-4 pr-8">{title}</h3>
             <div className="flex-1 overflow-y-auto">
               {message}
             </div>

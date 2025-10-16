@@ -16,6 +16,11 @@ export const useProfilePicture = () => {
 
       try {
         setLoading(true);
+        // Set a safe placeholder immediately to avoid null consumers flicker
+        setProfilePicture({
+          url: null,
+          name: user.email?.split('@')[0] || 'User'
+        });
         
         // Determine which table to query based on user role
         let tableName = '';
@@ -38,10 +43,15 @@ export const useProfilePicture = () => {
 
         console.log('Fetching profile picture from:', tableName, 'for user:', user.id);
 
-        // Try to fetch profile data - use * to get all columns
+        // Select columns safely per table to avoid 42703 errors
+        const selectByRole = (
+          tableName === 'business_profiles'
+            ? 'profile_picture_url, business_name'
+            : 'profile_picture_url, full_name, first_name, last_name'
+        );
         const { data, error } = await supabase
           .from(tableName)
-          .select('*')
+          .select(selectByRole)
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -60,7 +70,6 @@ export const useProfilePicture = () => {
           const displayName = data.full_name || 
                              (data.first_name && data.last_name ? `${data.first_name} ${data.last_name}` : data.first_name || data.last_name) ||
                              data.business_name ||
-                             data.company_name || 
                              user.email?.split('@')[0];
           
           const profileData = {
@@ -72,6 +81,32 @@ export const useProfilePicture = () => {
           setProfilePicture(profileData);
         } else {
           console.log('No profile data found for user role:', userRole);
+          // Create a default profile if none exists for business users
+          if (userRole === 'business') {
+            try {
+              const { error: insertError } = await supabase
+                .from('business_profiles')
+                .insert([{
+                  user_id: user.id,
+                  business_name: '',
+                  business_email: user.email || '',
+                  business_phone: '',
+                  business_address: '',
+                  bio: '',
+                  profile_picture_url: null,
+                  profile_complete: false
+                }]);
+              
+              if (insertError) {
+                console.error('Error creating business profile:', insertError);
+              } else {
+                console.log('Created default business profile');
+              }
+            } catch (createError) {
+              console.error('Error creating business profile:', createError);
+            }
+          }
+          
           setProfilePicture({
             url: null,
             name: user.email?.split('@')[0] || 'User'

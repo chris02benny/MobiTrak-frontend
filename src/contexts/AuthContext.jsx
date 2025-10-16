@@ -33,7 +33,8 @@ export const AuthProvider = ({ children }) => {
           setUser(session?.user ?? null)
 
           if (session?.user) {
-            await fetchUserRole(session.user.id)
+            // Fetch role in background so we don't block initial render
+            fetchUserRole(session.user.id)
           } else {
             setUserRole(null)
           }
@@ -90,9 +91,10 @@ export const AuthProvider = ({ children }) => {
           if (session?.user) {
             // Handle email confirmation and role update
             if (event === 'SIGNED_IN' && session.user.email_confirmed_at) {
-              await handleEmailConfirmation(session.user)
+              handleEmailConfirmation(session.user)
             }
-            await fetchUserRole(session.user.id)
+            // Fetch in background; don't block loading state
+            fetchUserRole(session.user.id)
           } else {
             setUserRole(null)
           }

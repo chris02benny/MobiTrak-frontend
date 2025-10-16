@@ -13,7 +13,20 @@ const BusinessProfilePage = () => {
   const [businessEmail, setBusinessEmail] = useState('');
   const [businessPhone, setBusinessPhone] = useState('');
   const [businessAddress, setBusinessAddress] = useState('');
+  const [addressLine, setAddressLine] = useState('');
+  const [city, setCity] = useState('');
+  const [stateName, setStateName] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [country, setCountry] = useState('');
   const [bio, setBio] = useState('');
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+  const mapRef = useRef(null);
+  const mapElRef = useRef(null);
+  const markerRef = useRef(null);
+  const autocompleteInputRef = useRef(null);
+  const [mapsReady, setMapsReady] = useState(false);
+  const [mapsError, setMapsError] = useState(null);
   const [profilePictureUrl, setProfilePictureUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
@@ -91,7 +104,7 @@ const BusinessProfilePage = () => {
       
       const { data, error } = await supabase
         .from('business_profiles')
-        .select('business_name, business_email, business_phone, business_address, bio, profile_picture_url, profile_complete')
+        .select('business_name, business_email, business_phone, business_address, bio, profile_picture_url, profile_complete, address_line, city, state, postal_code, country, latitude, longitude')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -109,6 +122,13 @@ const BusinessProfilePage = () => {
         setBio(data.bio || '');
         setProfilePictureUrl(data.profile_picture_url || '');
         setProfileComplete(data.profile_complete || false);
+        setAddressLine(data.address_line || '');
+        setCity(data.city || '');
+        setStateName(data.state || '');
+        setPostalCode(data.postal_code || '');
+        setCountry(data.country || '');
+        setLatitude(data.latitude ?? null);
+        setLongitude(data.longitude ?? null);
       } else {
         console.log('No business profile found, creating one...');
         // No profile exists yet, create one
@@ -122,7 +142,14 @@ const BusinessProfilePage = () => {
             business_address: '',
             bio: '',
             profile_picture_url: '',
-            profile_complete: false
+            profile_complete: false,
+            address_line: '',
+            city: '',
+            state: '',
+            postal_code: '',
+            country: '',
+            latitude: null,
+            longitude: null
           }])
           .select('*')
           .single();
@@ -140,6 +167,13 @@ const BusinessProfilePage = () => {
           setBio(newProfile.bio || '');
           setProfilePictureUrl(newProfile.profile_picture_url || '');
           setProfileComplete(newProfile.profile_complete || false);
+          setAddressLine(newProfile.address_line || '');
+          setCity(newProfile.city || '');
+          setStateName(newProfile.state || '');
+          setPostalCode(newProfile.postal_code || '');
+          setCountry(newProfile.country || '');
+          setLatitude(newProfile.latitude ?? null);
+          setLongitude(newProfile.longitude ?? null);
         }
       }
     } catch (error) {
@@ -167,7 +201,14 @@ const BusinessProfilePage = () => {
           business_phone: businessPhone,
           business_address: businessAddress,
           bio: bio,
-          profile_picture_url: profilePictureUrl || null
+          profile_picture_url: profilePictureUrl || null,
+          address_line: addressLine || null,
+          city: city || null,
+          state: stateName || null,
+          postal_code: postalCode || null,
+          country: country || null,
+          latitude: latitude,
+          longitude: longitude
         })
         .eq('user_id', user.id);
 
@@ -176,7 +217,7 @@ const BusinessProfilePage = () => {
       }
 
       // Update profile completion status
-      const isComplete = businessName && businessEmail && businessPhone && businessAddress;
+      const isComplete = businessName && businessEmail && businessPhone && (businessAddress || addressLine) && city && stateName && postalCode && country;
       if (isComplete) {
         await supabase
           .from('business_profiles')
@@ -191,6 +232,165 @@ const BusinessProfilePage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Load Google Maps JS API with Places
+  useEffect(() => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      console.warn('Google Maps API key not found. Set VITE_GOOGLE_MAPS_API_KEY in .env file');
+      setMapsError('API key not configured');
+      return;
+    }
+    if (window.google && window.google.maps) {
+      setMapsReady(true);
+      return;
+    }
+    const scriptId = 'google-maps-script';
+    if (document.getElementById(scriptId)) return;
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if (window.google?.maps?.places) {
+        setMapsReady(true);
+        setMapsError(null);
+      } else {
+        console.warn('Google Maps Places library failed to load');
+        setMapsError('Places library failed to load');
+      }
+    };
+    script.onerror = () => {
+      console.error('Failed to load Google Maps script');
+      setMapsError('Failed to load Google Maps');
+    };
+    
+    // Add error listener for billing issues
+    window.gm_authFailure = () => {
+      console.error('Google Maps authentication failed - check API key and billing');
+      setMapsError('Billing not enabled for this API key');
+    };
+    
+    document.body.appendChild(script);
+  }, []);
+
+  // Initialize Map when ready and element exists
+  useEffect(() => {
+    if (!mapsReady || !mapElRef.current || mapsError) return;
+    
+    try {
+      const center = (latitude && longitude) ? { lat: Number(latitude), lng: Number(longitude) } : { lat: 20.5937, lng: 78.9629 };
+      const map = new window.google.maps.Map(mapElRef.current, {
+        center,
+        zoom: (latitude && longitude) ? 14 : 5,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        styles: []
+      });
+      mapRef.current = map;
+
+      // Place marker if we have coords - use AdvancedMarkerElement if available
+      if (latitude && longitude) {
+        if (window.google.maps.marker && window.google.maps.marker.AdvancedMarkerElement) {
+          markerRef.current = new window.google.maps.marker.AdvancedMarkerElement({ 
+            position: center, 
+            map,
+            title: 'Business Location'
+          });
+        } else {
+          // Fallback to deprecated Marker
+          markerRef.current = new window.google.maps.Marker({ position: center, map });
+        }
+      }
+
+      // click to set marker and state
+      map.addListener('click', (e) => {
+        const pos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+        if (!markerRef.current) {
+          if (window.google.maps.marker && window.google.maps.marker.AdvancedMarkerElement) {
+            markerRef.current = new window.google.maps.marker.AdvancedMarkerElement({ 
+              position: pos, 
+              map,
+              title: 'Business Location'
+            });
+          } else {
+            markerRef.current = new window.google.maps.Marker({ position: pos, map });
+          }
+        } else {
+          markerRef.current.position = pos;
+        }
+        setLatitude(pos.lat);
+        setLongitude(pos.lng);
+      });
+
+      // Places Autocomplete
+      if (autocompleteInputRef.current && window.google?.maps?.places) {
+        try {
+          const ac = new window.google.maps.places.Autocomplete(autocompleteInputRef.current, {
+            fields: ['geometry', 'name', 'formatted_address']
+          });
+          ac.addListener('place_changed', () => {
+            const place = ac.getPlace();
+            if (!place.geometry) return;
+            const pos = {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng()
+            };
+            map.setCenter(pos);
+            map.setZoom(15);
+            if (!markerRef.current) {
+              if (window.google.maps.marker && window.google.maps.marker.AdvancedMarkerElement) {
+                markerRef.current = new window.google.maps.marker.AdvancedMarkerElement({ 
+                  position: pos, 
+                  map,
+                  title: 'Business Location'
+                });
+              } else {
+                markerRef.current = new window.google.maps.Marker({ position: pos, map });
+              }
+            } else {
+              markerRef.current.position = pos;
+            }
+            setLatitude(pos.lat);
+            setLongitude(pos.lng);
+          });
+        } catch (error) {
+          console.warn('Google Places Autocomplete not available:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error initializing Google Maps:', error);
+      setMapsError('Failed to initialize map');
+    }
+  }, [mapsReady, latitude, longitude, mapsError]);
+
+  const handleUseCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      showToast('Geolocation is not supported by your browser', 'error');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        if (mapRef.current) {
+          mapRef.current.setCenter(coords);
+          mapRef.current.setZoom(15);
+          if (!markerRef.current) {
+            markerRef.current = new window.google.maps.Marker({ position: coords, map: mapRef.current });
+          } else {
+            markerRef.current.setPosition(coords);
+          }
+        }
+        setLatitude(coords.lat);
+        setLongitude(coords.lng);
+        showToast('Business location set to current position', 'success');
+      },
+      () => showToast('Unable to retrieve your location', 'error'),
+      { enableHighAccuracy: true }
+    );
   };
 
 
@@ -251,11 +451,11 @@ const BusinessProfilePage = () => {
         </div>
 
 
-        {/* Profile Form */}
-        <div className="enterprise-card p-8">
-          <h2 className="text-2xl font-semibold mb-6 text-white">Business Information</h2>
+        {/* Account Details Card */}
+        <div className="enterprise-card p-8 mb-8">
+          <h2 className="text-2xl font-semibold mb-6 text-white">Account Details</h2>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Business Name */}
               <div>
@@ -309,23 +509,6 @@ const BusinessProfilePage = () => {
               <p className="text-xs text-gray-500 mt-1">Official business email</p>
             </div>
 
-            {/* Business Address */}
-            <div>
-              <label htmlFor="businessAddress" className="block text-gray-300 text-sm font-bold mb-2">
-                Business Address *
-              </label>
-              <input
-                type="text"
-                id="businessAddress"
-                className="enterprise-input w-full"
-                value={businessAddress}
-                onChange={(e) => setBusinessAddress(e.target.value)}
-                placeholder="Enter complete business address"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">Primary business location</p>
-            </div>
-
             {/* Bio */}
             <div>
               <label htmlFor="bio" className="block text-gray-300 text-sm font-bold mb-2">
@@ -340,6 +523,159 @@ const BusinessProfilePage = () => {
                 maxLength={500}
               />
               <p className="text-xs text-gray-500 mt-1">{bio.length}/500 characters</p>
+            </div>
+
+        </form>
+        </div>
+
+        {/* Contact Information + Location Card */}
+        <div className="enterprise-card p-8">
+          <h2 className="text-2xl font-semibold mb-6 text-white">Contact Information</h2>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="addressLine" className="block text-gray-300 text-sm font-bold mb-2">Address Line</label>
+                <input type="text" id="addressLine" className="enterprise-input w-full" value={addressLine} onChange={(e) => setAddressLine(e.target.value)} placeholder="Apartment, suite, unit, building, etc." />
+              </div>
+              <div>
+                <label htmlFor="businessAddress" className="block text-gray-300 text-sm font-bold mb-2">Address</label>
+                <input type="text" id="businessAddress" className="enterprise-input w-full" value={businessAddress} onChange={(e) => setBusinessAddress(e.target.value)} placeholder="Street address" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label htmlFor="city" className="block text-gray-300 text-sm font-bold mb-2">City</label>
+                <input type="text" id="city" className="enterprise-input w-full" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
+              </div>
+              <div>
+                <label htmlFor="state" className="block text-gray-300 text-sm font-bold mb-2">State</label>
+                <input type="text" id="state" className="enterprise-input w-full" value={stateName} onChange={(e) => setStateName(e.target.value)} placeholder="State" />
+              </div>
+              <div>
+                <label htmlFor="postalCode" className="block text-gray-300 text-sm font-bold mb-2">Pincode</label>
+                <input type="text" id="postalCode" className="enterprise-input w-full" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="Postal code" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="country" className="block text-gray-300 text-sm font-bold mb-2">Country</label>
+                <input type="text" id="country" className="enterprise-input w-full" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Country" />
+              </div>
+              <div>
+                <label htmlFor="autocomplete" className="block text-gray-300 text-sm font-bold mb-2">Search Location</label>
+                <input 
+                  ref={autocompleteInputRef} 
+                  id="autocomplete" 
+                  type="text" 
+                  className="enterprise-input w-full" 
+                  placeholder={import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? "Search your business location" : "Google Maps not configured"}
+                  disabled={!import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
+                />
+                {!import.meta.env.VITE_GOOGLE_MAPS_API_KEY && (
+                  <p className="text-xs text-gray-500 mt-1">Set VITE_GOOGLE_MAPS_API_KEY in .env to enable location search</p>
+                )}
+              </div>
+            </div>
+
+            {/* Map */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-gray-400 text-sm">Pin your business location on the map</p>
+                <div className="flex gap-3">
+                  <button 
+                    type="button" 
+                    onClick={handleUseCurrentLocation} 
+                    className="enterprise-button-secondary px-4 py-2"
+                    disabled={mapsError}
+                  >
+                    Use My Current Location
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={async () => {
+                      // Save only location quickly
+                      try {
+                        const { error } = await supabase.from('business_profiles').update({ latitude, longitude }).eq('user_id', user.id);
+                        if (error) throw error;
+                        showToast('Business location saved successfully', 'success');
+                      } catch (e) {
+                        showToast(e.message || 'Failed to save location', 'error');
+                      }
+                    }} 
+                    className="enterprise-button px-4 py-2"
+                    disabled={mapsError}
+                  >
+                    Save Location
+                  </button>
+                </div>
+              </div>
+              
+              {mapsError ? (
+                <div className="w-full h-72 rounded-lg border border-red-500 bg-red-900/20 flex items-center justify-center">
+                  <div className="text-center p-6">
+                    <div className="text-red-400 mb-2 text-lg">⚠️ Google Maps Error</div>
+                    <p className="text-red-300 mb-2">{mapsError}</p>
+                    {mapsError.includes('Billing') && (
+                      <div className="text-sm text-red-200">
+                        <p>To fix this issue:</p>
+                        <ol className="list-decimal list-inside mt-2 space-y-1">
+                          <li>Go to <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="underline">Google Cloud Console</a></li>
+                          <li>Enable billing for your project</li>
+                          <li>Enable the Maps JavaScript API</li>
+                          <li>Check your API key permissions</li>
+                        </ol>
+                      </div>
+                    )}
+                    <div className="mt-4 text-xs text-gray-400">
+                      You can still manually enter coordinates below
+                    </div>
+                  </div>
+                </div>
+              ) : !import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? (
+                <div className="w-full h-72 rounded-lg border border-gray-700 bg-gray-800 flex items-center justify-center">
+                  <div className="text-center">
+                    <p className="text-gray-400 mb-2">Google Maps not configured</p>
+                    <p className="text-xs text-gray-500">Set VITE_GOOGLE_MAPS_API_KEY in .env file to enable map</p>
+                  </div>
+                </div>
+              ) : (
+                <div ref={mapElRef} className="w-full h-72 rounded-lg border border-gray-700 bg-gray-800" />
+              )}
+              
+              <div className="text-xs text-gray-500 mt-2">Lat: {latitude ?? '-'} | Lng: {longitude ?? '-'}</div>
+              
+              {/* Manual coordinate input as fallback */}
+              {mapsError && (
+                <div className="mt-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
+                  <h4 className="text-sm font-semibold text-gray-300 mb-3">Manual Location Entry</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1">Latitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={latitude || ''}
+                        onChange={(e) => setLatitude(e.target.value ? parseFloat(e.target.value) : null)}
+                        className="enterprise-input text-sm"
+                        placeholder="e.g., 9.531693"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1">Longitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={longitude || ''}
+                        onChange={(e) => setLongitude(e.target.value ? parseFloat(e.target.value) : null)}
+                        className="enterprise-input text-sm"
+                        placeholder="e.g., 76.819030"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Form Actions */}

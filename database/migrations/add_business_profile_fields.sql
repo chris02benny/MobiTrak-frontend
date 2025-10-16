@@ -6,7 +6,14 @@ ALTER TABLE IF EXISTS public.business_profiles
   ADD COLUMN IF NOT EXISTS business_email TEXT,
   ADD COLUMN IF NOT EXISTS business_address TEXT,
   ADD COLUMN IF NOT EXISTS bio TEXT,
-  ADD COLUMN IF NOT EXISTS profile_picture_url TEXT;
+  ADD COLUMN IF NOT EXISTS profile_picture_url TEXT,
+  ADD COLUMN IF NOT EXISTS address_line TEXT,
+  ADD COLUMN IF NOT EXISTS city TEXT,
+  ADD COLUMN IF NOT EXISTS state TEXT,
+  ADD COLUMN IF NOT EXISTS postal_code TEXT,
+  ADD COLUMN IF NOT EXISTS country TEXT,
+  ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION,
+  ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
 
 -- Optional: backfill profile_complete flag based on required fields
 -- UPDATE public.business_profiles

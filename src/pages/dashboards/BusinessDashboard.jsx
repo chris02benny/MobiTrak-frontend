@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import DashboardCard from '../../components/DashboardCard';
@@ -24,6 +24,12 @@ const BusinessDashboard = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const mapRef = useRef(null);
+  const mapElRef = useRef(null);
+  const markerRef = useRef(null);
+  const [mapsReady, setMapsReady] = useState(false);
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
 
   const fetchVehicles = async () => {
     if (!user?.id) return;
@@ -46,6 +52,95 @@ const BusinessDashboard = () => {
   useEffect(() => {
     fetchVehicles();
   }, [user?.id]);
+
+  // Load Google Maps JS API
+  useEffect(() => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) return;
+    if (window.google && window.google.maps) {
+      setMapsReady(true);
+      return;
+    }
+    const scriptId = 'google-maps-script';
+    if (document.getElementById(scriptId)) return;
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setMapsReady(true);
+    document.body.appendChild(script);
+  }, []);
+
+  // Fetch existing business location
+  useEffect(() => {
+    const fetchLocation = async () => {
+      if (!user?.id) return;
+      const { data, error } = await supabase
+        .from('business_profiles')
+        .select('latitude, longitude')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!error && data) {
+        setLatitude(data.latitude ?? null);
+        setLongitude(data.longitude ?? null);
+      }
+    };
+    fetchLocation();
+  }, [user?.id]);
+
+  // Initialize Map
+  useEffect(() => {
+    if (!mapsReady || !mapElRef.current) return;
+    const center = (latitude && longitude) ? { lat: Number(latitude), lng: Number(longitude) } : { lat: 20.5937, lng: 78.9629 };
+    const map = new window.google.maps.Map(mapElRef.current, {
+      center,
+      zoom: (latitude && longitude) ? 14 : 5,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false
+    });
+    mapRef.current = map;
+
+    // Place existing marker
+    if (latitude && longitude) {
+      markerRef.current = new window.google.maps.Marker({ position: center, map, draggable: true });
+      markerRef.current.addListener('dragend', (e) => {
+        setLatitude(e.latLng.lat());
+        setLongitude(e.latLng.lng());
+      });
+    }
+
+    // Click to set marker
+    map.addListener('click', (e) => {
+      const pos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+      if (!markerRef.current) {
+        markerRef.current = new window.google.maps.Marker({ position: pos, map, draggable: true });
+        markerRef.current.addListener('dragend', (ev) => {
+          setLatitude(ev.latLng.lat());
+          setLongitude(ev.latLng.lng());
+        });
+      } else {
+        markerRef.current.setPosition(pos);
+      }
+      setLatitude(pos.lat);
+      setLongitude(pos.lng);
+    });
+  }, [mapsReady]);
+
+  const handleSaveLocation = async () => {
+    if (!user?.id) return;
+    try {
+      const { error } = await supabase
+        .from('business_profiles')
+        .update({ latitude, longitude })
+        .eq('user_id', user.id);
+      if (error) throw error;
+      showToast('Business location saved successfully', 'success');
+    } catch (e) {
+      showToast(e.message || 'Failed to save location', 'error');
+    }
+  };
 
 
 
@@ -127,6 +222,65 @@ const BusinessDashboard = () => {
                   <span className="text-gray-500 ml-auto">1 hour ago</span>
                 </div>
               </div>
+            </DashboardCard>
+          </div>
+
+          {/* Business Location (Pin on Map) */}
+          <div className="grid grid-cols-1 gap-8 mt-8">
+            <DashboardCard title="Business Location" className="col-span-1">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-gray-400 text-sm">Pin your business location on the map</p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!navigator.geolocation) {
+                        showToast('Geolocation is not supported by your browser', 'error');
+                        return;
+                      }
+                      navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                          const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                          if (mapRef.current) {
+                            mapRef.current.setCenter(coords);
+                            mapRef.current.setZoom(15);
+                            if (!markerRef.current) {
+                              markerRef.current = new window.google.maps.Marker({ position: coords, map: mapRef.current, draggable: true });
+                              markerRef.current.addListener('dragend', (e) => {
+                                setLatitude(e.latLng.lat());
+                                setLongitude(e.latLng.lng());
+                              });
+                            } else {
+                              markerRef.current.setPosition(coords);
+                            }
+                          }
+                          setLatitude(coords.lat);
+                          setLongitude(coords.lng);
+                          showToast('Location set to current position', 'success');
+                        },
+                        () => showToast('Unable to retrieve your location', 'error'),
+                        { enableHighAccuracy: true }
+                      );
+                    }}
+                    className="enterprise-button-secondary px-4 py-2"
+                  >
+                    Use My Current Location
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveLocation}
+                    className="enterprise-button px-4 py-2"
+                    disabled={!latitude || !longitude}
+                  >
+                    Save Location
+                  </button>
+                </div>
+              </div>
+              <div ref={mapElRef} className="w-full h-72 rounded-lg border border-gray-700 bg-gray-800" />
+              <div className="text-xs text-gray-500 mt-2">Lat: {latitude ?? '-'} | Lng: {longitude ?? '-'}</div>
+              {!import.meta.env.VITE_GOOGLE_MAPS_API_KEY && (
+                <div className="text-xs text-red-400 mt-2">Set VITE_GOOGLE_MAPS_API_KEY in mobitrak-app/.env to enable the map.</div>
+              )}
             </DashboardCard>
           </div>
 

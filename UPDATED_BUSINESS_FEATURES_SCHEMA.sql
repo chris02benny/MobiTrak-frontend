@@ -14,7 +14,18 @@ CREATE TABLE IF NOT EXISTS vehicle_labels (
 
 -- 2. Update vehicles table with new fields
 ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES public.user_profiles(id) ON DELETE CASCADE;
-ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS registration_number TEXT;
+-- OCR RC fields additions
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS registered_number TEXT;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS maker_name TEXT;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS class_of_vehicle TEXT;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS fuel_type TEXT;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS seating_capacity INTEGER;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS tax_license_no TEXT;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS tax_paid_from TEXT; -- store as DD/MM/YYYY
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS tax_paid_to TEXT;   -- store as DD/MM/YYYY
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS date_of_registration TEXT; -- DD/MM/YYYY
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS fitness_valid_from TEXT;   -- DD/MM/YYYY
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS fitness_valid_to TEXT;     -- DD/MM/YYYY
 ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS vehicle_type TEXT CHECK (vehicle_type IN ('sedan', 'suv', 'hatchback', 'truck', 'bus', 'van', 'motorcycle', 'other'));
 ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS label_id UUID REFERENCES vehicle_labels(id) ON DELETE SET NULL;
 ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'available' CHECK (status IN ('available', 'under_maintenance', 'unavailable', 'in_use'));
