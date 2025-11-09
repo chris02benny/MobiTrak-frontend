@@ -3,21 +3,18 @@ import axios from 'axios';
 import L from 'leaflet';
 import toast, { Toaster } from 'react-hot-toast';
 import OverviewPage from './business/OverviewPage';
-import FleetPage from './business/FleetPage';
-import HirePage from './business/HirePage';
-import DriverManagementPage from './business/DriverManagementPage';
+import VehiclesPage from './business/VehiclesPage';
+import DriversPage from './business/DriversPage';
 import ReportsPage from './business/ReportsPage';
 import TripsPage from './business/TripsPage';
 import ProfilePage from './business/ProfilePage';
 import EnquiriesPage from './business/EnquiriesPage';
-import PendingTripsPage from './business/PendingTripsPage';
 import CustomersPage from './business/CustomersPage';
 
 const BusinessDashboard = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [activeSubTab, setActiveSubTab] = useState({ trips: 'add', drivers: 'available' });
+  const [activeSubTab, setActiveSubTab] = useState({ trips: 'add', drivers: 'hire' });
   const [vehicles, setVehicles] = useState([]);
-  const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [showEditVehicle, setShowEditVehicle] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [showVehicleDetails, setShowVehicleDetails] = useState(false);
@@ -107,12 +104,12 @@ const BusinessDashboard = ({ onLogout }) => {
     fetchBusinessProfile();
   }, []);
 
-  // Fetch vehicles when fleet or overview tab is active
+  // Fetch vehicles when vehicles or overview tab is active
   useEffect(() => {
-    if (activeTab === 'fleet' || activeTab === 'overview') {
+    if (activeTab === 'vehicles' || activeTab === 'overview') {
       fetchVehicles();
     }
-    if (activeTab === 'hire') {
+    if (activeTab === 'drivers') {
       fetchAvailableDrivers();
       fetchHiredDrivers();
       fetchPendingOffers();
@@ -707,6 +704,19 @@ const BusinessDashboard = ({ onLogout }) => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
+      // Check for duplicate vehicle registration number (excluding current vehicle)
+      const existingVehicle = vehicles.find(v => 
+        v._id !== editingVehicle._id &&
+        v.registeredNumber && vehicleForm.registeredNumber && 
+        v.registeredNumber.toLowerCase().trim() === vehicleForm.registeredNumber.toLowerCase().trim()
+      );
+      
+      if (existingVehicle) {
+        toast.error(`A vehicle with registration number "${vehicleForm.registeredNumber}" already exists. Please use a different registration number.`);
+        setLoading(false);
+        return;
+      }
+      
       const response = await fetch(`/api/vehicles/${editingVehicle._id}/images`, {
         method: 'PUT',
         headers: {
@@ -756,6 +766,18 @@ const BusinessDashboard = ({ onLogout }) => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
+      // Check for duplicate vehicle registration number
+      const existingVehicle = vehicles.find(v => 
+        v.registeredNumber && vehicleForm.registeredNumber && 
+        v.registeredNumber.toLowerCase().trim() === vehicleForm.registeredNumber.toLowerCase().trim()
+      );
+      
+      if (existingVehicle) {
+        toast.error(`A vehicle with registration number "${vehicleForm.registeredNumber}" already exists. Please use a different registration number.`);
+        setLoading(false);
+        return;
+      }
+      
       console.log('=== FRONTEND DEBUG ===');
       console.log('Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'Missing');
       console.log('Authorization header:', `Bearer ${token}`);
@@ -787,7 +809,6 @@ const BusinessDashboard = ({ onLogout }) => {
       if (response.ok) {
         const data = await response.json();
         console.log('Vehicle added successfully:', data);
-        setShowAddVehicle(false);
         clearVehicleForm();
         
         // Add to recent activity immediately
@@ -828,19 +849,19 @@ const BusinessDashboard = ({ onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen flex" style={{ backgroundColor: '#0D0D0D' }}>
       {/* Sidebar Navigation */}
-      <div className="w-64 bg-white shadow-lg flex flex-col sticky top-0 h-screen">
+      <div className="w-64 shadow-lg flex flex-col sticky top-0 h-screen" style={{ backgroundColor: '#1F1F1F', borderRight: '1px solid #0D0D0D' }}>
       {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b" style={{ borderColor: '#0D0D0D' }}>
             <div className="flex items-center">
-            <div className="h-8 w-8 bg-yellow-500 rounded-lg flex items-center justify-center mr-3">
-                <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <div className="h-8 w-8 bg-[#FFC107] rounded-lg flex items-center justify-center mr-3 shadow-card">
+                <svg className="h-5 w-5 text-black" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
                   <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 14H17a1 1 0 001-1V8a1 1 0 00-1-1h-3z" />
                 </svg>
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">MobiTrak Business</h1>
+              <h1 className="text-xl font-semibold text-white">MobiTrak Business</h1>
             </div>
             </div>
 
@@ -848,11 +869,9 @@ const BusinessDashboard = ({ onLogout }) => {
         <nav className="flex-1 px-4 py-6 space-y-2">
           {[
             { id: 'overview', name: 'Overview', icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z' },
-            { id: 'fleet', name: 'Fleet Management', icon: 'M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z' },
-            { id: 'enquiries', name: 'Customer Enquiries', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
-            { id: 'pending-trips', name: 'Pending Trips', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-            { id: 'hire', name: 'Hire Drivers', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
-            { id: 'driver-management', name: 'Driver Management', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z' },
+            { id: 'vehicles', name: 'Vehicles', icon: 'M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z' },
+            { id: 'enquiries', name: 'Enquiries', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
+            { id: 'drivers', name: 'Drivers', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
             { id: 'trips', name: 'Trips', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' },
             { id: 'reports', name: 'Reports', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
             { id: 'profile', name: 'Profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' }
@@ -860,11 +879,26 @@ const BusinessDashboard = ({ onLogout }) => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === tab.id
-                  ? 'bg-yellow-100 text-yellow-700 border-r-2 border-yellow-500'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+              className="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ease-in-out"
+              style={activeTab === tab.id ? {
+                backgroundColor: '#FFC107',
+                color: '#000000'
+              } : {
+                backgroundColor: 'transparent',
+                color: '#FFFFFF'
+              }}
+              onMouseEnter={(e) => {
+                if (activeTab !== tab.id) {
+                  e.currentTarget.style.backgroundColor = '#FFC107';
+                  e.currentTarget.style.color = '#000000';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== tab.id) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#FFFFFF';
+                }
+              }}
               >
               <svg className="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
@@ -875,9 +909,9 @@ const BusinessDashboard = ({ onLogout }) => {
       </nav>
 
         {/* Business Profile Section */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t" style={{ borderColor: '#0D0D0D' }}>
           <div className="flex items-center mb-4">
-            <div className="h-12 w-12 bg-gray-300 rounded-full flex items-center justify-center mr-3 overflow-hidden">
+            <div className="h-12 w-12 rounded-full flex items-center justify-center mr-3 overflow-hidden" style={{ backgroundColor: '#1F1F1F' }}>
               {businessProfile?.profileIcon ? (
                 <img
                   src={businessProfile.profileIcon}
@@ -885,20 +919,20 @@ const BusinessDashboard = ({ onLogout }) => {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <svg className="h-6 w-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="h-6 w-6 text-[#B0B0B0]" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-sm font-medium truncate text-white">
                 {businessProfile?.companyName || 'Business Name'}
               </p>
-              <p className="text-xs text-gray-500 truncate">
+              <p className="text-xs truncate text-[#B0B0B0]">
                 {businessProfile?.ownerName || 'Owner Name'}
               </p>
               {businessProfile?.address && (
-                <p className="text-xs text-gray-400 truncate">
+                <p className="text-xs truncate text-[#B0B0B0]">
                   {businessProfile.address.city}, {businessProfile.address.state}
                 </p>
               )}
@@ -908,7 +942,7 @@ const BusinessDashboard = ({ onLogout }) => {
 
           <button
             onClick={handleLogout}
-            className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="w-full bg-[#F44336] hover:bg-[#D32F2F] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-in-out"
           >
             Logout
           </button>
@@ -929,12 +963,18 @@ const BusinessDashboard = ({ onLogout }) => {
             />
           )}
 
-          {activeTab === 'fleet' && (
-            <FleetPage 
+          {activeTab === 'vehicles' && (
+            <VehiclesPage 
               vehicles={vehicles}
               loading={loading}
-              clearVehicleForm={clearVehicleForm}
-              setShowAddVehicle={setShowAddVehicle}
+              vehicleForm={vehicleForm}
+              setVehicleForm={setVehicleForm}
+              handleAddVehicle={handleAddVehicle}
+              handleImageUpload={handleImageUpload}
+              isExtractingRC={isExtractingRC}
+              isFieldUpdated={isFieldUpdated}
+              vehicleImageRef={vehicleImageRef}
+              rcImageRef={rcImageRef}
               handleViewVehicleDetails={handleViewVehicleDetails}
               handleEditVehicle={handleEditVehicle}
               handleDeleteVehicle={handleDeleteVehicle}
@@ -945,12 +985,8 @@ const BusinessDashboard = ({ onLogout }) => {
             <EnquiriesPage />
           )}
 
-          {activeTab === 'pending-trips' && (
-            <PendingTripsPage />
-          )}
-
-          {activeTab === 'hire' && (
-            <HirePage 
+          {activeTab === 'drivers' && (
+            <DriversPage 
               activeSubTab={activeSubTab}
               setActiveSubTab={setActiveSubTab}
               drivers={drivers}
@@ -971,10 +1007,6 @@ const BusinessDashboard = ({ onLogout }) => {
               showOfferModal={showOfferModal}
               setShowOfferModal={setShowOfferModal}
             />
-          )}
-
-          {activeTab === 'driver-management' && (
-            <DriverManagementPage />
           )}
 
           {activeTab === 'customers' && (
@@ -1001,270 +1033,23 @@ const BusinessDashboard = ({ onLogout }) => {
         </main>
               </div>
 
-      {/* Add Vehicle Modal */}
-      {showAddVehicle && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Add New Vehicle</h3>
-                <button
-                  onClick={() => {
-                    clearVehicleForm();
-                    setShowAddVehicle(false);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <form onSubmit={handleAddVehicle} className="space-y-4">
-                {/* Vehicle Image Upload */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Vehicle Image (Optional)
-                  </label>
-                  <input
-                    ref={vehicleImageRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, 'vehicleImage')}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                  {vehicleForm.vehicleImage && (
-                    <div className="mt-2">
-                      <img
-                        src={vehicleForm.vehicleImage}
-                        alt="Vehicle preview"
-                        className="h-32 w-32 object-cover rounded-lg"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* RC Image Upload */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    RC Book Image (Required) *
-                  </label>
-                  <input
-                    ref={rcImageRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, 'rcImage')}
-                    required
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                  {vehicleForm.rcImage && (
-                    <div className="mt-2">
-                      <img
-                        src={vehicleForm.rcImage}
-                        alt="RC preview"
-                        className="h-32 w-32 object-cover rounded-lg"
-                      />
-                    </div>
-                  )}
-                  <p className="mt-1 text-xs text-gray-500">
-                    Upload a clear image of your vehicle's RC book. We'll automatically extract the details.
-                  </p>
-                  
-                  {/* RC Extraction Loading */}
-                  {isExtractingRC && (
-                    <div className="mt-2 flex items-center text-blue-600">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                      <span className="text-sm">Extracting RC data...</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* RC Extracted Fields */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-blue-900 mb-3">RC Book Information (Auto-filled)</h4>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Registered Number
-                      </label>
-                      <input
-                        type="text"
-                        value={vehicleForm.registeredNumber}
-                        onChange={(e) => setVehicleForm(prev => ({ ...prev, registeredNumber: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                        placeholder="Auto-filled from RC"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Maker's Name
-                      </label>
-                      <input
-                        type="text"
-                        value={vehicleForm.makersName}
-                        onChange={(e) => setVehicleForm(prev => ({ ...prev, makersName: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                        placeholder="Auto-filled from RC"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Name of Regd Owner
-                      </label>
-                      <input
-                        type="text"
-                        value={vehicleForm.registeredOwnerName}
-                        onChange={(e) => setVehicleForm(prev => ({ ...prev, registeredOwnerName: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                        placeholder="Auto-filled from RC"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Class of Vehicle
-                      </label>
-                      <input
-                        type="text"
-                        value={vehicleForm.vehicleClass}
-                        onChange={(e) => setVehicleForm(prev => ({ ...prev, vehicleClass: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                        placeholder="Auto-filled from RC"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Fuel
-                      </label>
-                      <input
-                        type="text"
-                        value={vehicleForm.fuel}
-                        onChange={(e) => setVehicleForm(prev => ({ ...prev, fuel: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                        placeholder="Auto-filled from RC"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Certificate of Fitness Valid From
-                      </label>
-                      <input
-                        type="date"
-                        value={vehicleForm.certificateOfFitnessFrom}
-                        onChange={(e) => setVehicleForm(prev => ({ ...prev, certificateOfFitnessFrom: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Certificate of Fitness Valid To
-                      </label>
-                      <input
-                        type="date"
-                        value={vehicleForm.certificateOfFitnessTo}
-                        onChange={(e) => setVehicleForm(prev => ({ ...prev, certificateOfFitnessTo: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                      />
-                    </div>
-
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Seating Capacity
-                      </label>
-                      <input
-                        type="number"
-                        value={vehicleForm.seatingCapacity}
-                        onChange={(e) => setVehicleForm(prev => ({ ...prev, seatingCapacity: e.target.value }))}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          isFieldUpdated('Seating Capacity') 
-                            ? 'border-green-500 bg-green-50 text-green-800' 
-                            : 'border-gray-300 bg-white'
-                        }`}
-                        placeholder={vehicleForm.seatingCapacity ? "Auto-filled from RC" : "Not found in RC - Enter manually"}
-                        min="1"
-                        max="100"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Vehicle Type */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Vehicle Type *
-                  </label>
-                  <select
-                    value={vehicleForm.vehicleType}
-                    onChange={(e) => setVehicleForm(prev => ({ ...prev, vehicleType: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                    required
-                  >
-                    <option value="">Select Vehicle Type</option>
-                    <option value="Logistics">Logistics</option>
-                    <option value="Passenger">Passenger</option>
-                  </select>
-                </div>
-
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      clearVehicleForm();
-                      setShowAddVehicle(false);
-                    }}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading || !vehicleForm.rcImage || isExtractingRC}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 rounded-md flex items-center"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Adding...
-                      </>
-                    ) : isExtractingRC ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Extracting RC...
-                      </>
-                    ) : (
-                      'Add Vehicle'
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Edit Vehicle Modal */}
       {showEditVehicle && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 overflow-y-auto h-full w-full z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)' }}>
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md" style={{ backgroundColor: '#1F1F1F', borderColor: '#0D0D0D' }}>
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Edit Vehicle</h3>
+                <h3 className="text-lg font-medium" style={{ color: '#FFC107' }}>Edit Vehicle</h3>
                 <button
                   onClick={() => {
                     clearVehicleForm();
                     setShowEditVehicle(false);
                     setEditingVehicle(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="transition-colors"
+                  style={{ color: '#B0B0B0' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = '#B0B0B0'}
                 >
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1275,10 +1060,10 @@ const BusinessDashboard = ({ onLogout }) => {
               <form onSubmit={handleUpdateVehicle} className="space-y-4">
                 {/* Vehicle Image Upload */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
                     Vehicle Image (Optional)
                   </label>
-                  <p className="text-xs text-gray-500 mb-2">
+                  <p className="text-xs mb-2" style={{ color: '#B0B0B0' }}>
                     Upload a new image to replace the current one, or leave empty to keep the existing image.
                   </p>
                   <input
@@ -1286,7 +1071,8 @@ const BusinessDashboard = ({ onLogout }) => {
                     type="file"
                     accept="image/*"
                     onChange={(e) => handleImageUpload(e, 'vehicleImage')}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:text-black hover:file:bg-opacity-90 file:transition-all"
+                    style={{ color: '#B0B0B0' }}
                   />
                   {vehicleForm.vehicleImage && (
                     <div className="mt-2">
@@ -1301,10 +1087,10 @@ const BusinessDashboard = ({ onLogout }) => {
 
                 {/* RC Image Upload */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
                     RC Document (Required)
                   </label>
-                  <p className="text-xs text-gray-500 mb-2">
+                  <p className="text-xs mb-2" style={{ color: '#B0B0B0' }}>
                     Upload a new RC document to replace the current one, or leave empty to keep the existing document.
                   </p>
                   <input
@@ -1312,7 +1098,8 @@ const BusinessDashboard = ({ onLogout }) => {
                     type="file"
                     accept="image/*"
                     onChange={(e) => handleImageUpload(e, 'rcImage')}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:text-black hover:file:bg-opacity-90 file:transition-all"
+                    style={{ color: '#B0B0B0' }}
                   />
                   {vehicleForm.rcImage && (
                     <div className="mt-2">
@@ -1326,140 +1113,188 @@ const BusinessDashboard = ({ onLogout }) => {
                   
                   {/* RC Extraction Loading for Edit Mode */}
                   {isExtractingRCInEdit && (
-                    <div className="mt-2 flex items-center text-blue-600">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                    <div className="mt-2 flex items-center" style={{ color: '#FFC107' }}>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 mr-2" style={{ borderColor: '#FFC107' }}></div>
                       <span className="text-sm">Extracting RC data...</span>
                     </div>
                   )}
                 </div>
 
                 {/* RC Extracted Fields */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-blue-900 mb-3">RC Book Information (Auto-filled)</h4>
+                <div className="rounded-lg p-4" style={{ backgroundColor: '#1F1F1F', border: '1px solid #0D0D0D' }}>
+                  <h4 className="text-sm font-medium mb-3" style={{ color: '#FFC107' }}>RC Book Information (Auto-filled)</h4>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                         Registered Number
                       </label>
                       <input
                         type="text"
                         value={vehicleForm.registeredNumber}
                         onChange={(e) => setVehicleForm(prev => ({ ...prev, registeredNumber: e.target.value }))}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all ${
                           isFieldUpdated('Registration Number') 
-                            ? 'border-green-500 bg-green-50 text-green-800' 
-                            : 'border-gray-300 bg-white'
+                            ? 'border-green-500 text-green-400' 
+                            : ''
                         }`}
+                        style={{ 
+                          borderColor: isFieldUpdated('Registration Number') ? '#4CAF50' : '#0D0D0D',
+                          backgroundColor: '#0D0D0D',
+                          color: '#FFFFFF'
+                        }}
+                        onFocus={(e) => !isFieldUpdated('Registration Number') && (e.target.style.borderColor = '#FFC107')}
+                        onBlur={(e) => !isFieldUpdated('Registration Number') && (e.target.style.borderColor = '#0D0D0D')}
                         placeholder="Auto-filled from RC"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                         Maker's Name
                       </label>
                       <input
                         type="text"
                         value={vehicleForm.makersName}
                         onChange={(e) => setVehicleForm(prev => ({ ...prev, makersName: e.target.value }))}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all ${
                           isFieldUpdated('Manufacturer') 
-                            ? 'border-green-500 bg-green-50 text-green-800' 
-                            : 'border-gray-300 bg-white'
+                            ? 'border-green-500 text-green-400' 
+                            : ''
                         }`}
+                        style={{ 
+                          borderColor: isFieldUpdated('Manufacturer') ? '#4CAF50' : '#0D0D0D',
+                          backgroundColor: '#0D0D0D',
+                          color: '#FFFFFF'
+                        }}
+                        onFocus={(e) => !isFieldUpdated('Manufacturer') && (e.target.style.borderColor = '#FFC107')}
+                        onBlur={(e) => !isFieldUpdated('Manufacturer') && (e.target.style.borderColor = '#0D0D0D')}
                         placeholder="Auto-filled from RC"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                         Name of Regd Owner
                       </label>
                       <input
                         type="text"
                         value={vehicleForm.registeredOwnerName}
                         onChange={(e) => setVehicleForm(prev => ({ ...prev, registeredOwnerName: e.target.value }))}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all ${
                           isFieldUpdated('Owner Name') 
-                            ? 'border-green-500 bg-green-50 text-green-800' 
-                            : 'border-gray-300 bg-white'
+                            ? 'border-green-500 text-green-400' 
+                            : ''
                         }`}
+                        style={{ 
+                          borderColor: isFieldUpdated('Owner Name') ? '#4CAF50' : '#0D0D0D',
+                          backgroundColor: '#0D0D0D',
+                          color: '#FFFFFF'
+                        }}
+                        onFocus={(e) => !isFieldUpdated('Owner Name') && (e.target.style.borderColor = '#FFC107')}
+                        onBlur={(e) => !isFieldUpdated('Owner Name') && (e.target.style.borderColor = '#0D0D0D')}
                         placeholder="Auto-filled from RC"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                         Class of Vehicle
                       </label>
                       <input
                         type="text"
                         value={vehicleForm.vehicleClass}
                         onChange={(e) => setVehicleForm(prev => ({ ...prev, vehicleClass: e.target.value }))}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all ${
                           isFieldUpdated('Vehicle Class') 
-                            ? 'border-green-500 bg-green-50 text-green-800' 
-                            : 'border-gray-300 bg-white'
+                            ? 'border-green-500 text-green-400' 
+                            : ''
                         }`}
+                        style={{ 
+                          borderColor: isFieldUpdated('Vehicle Class') ? '#4CAF50' : '#0D0D0D',
+                          backgroundColor: '#0D0D0D',
+                          color: '#FFFFFF'
+                        }}
+                        onFocus={(e) => !isFieldUpdated('Vehicle Class') && (e.target.style.borderColor = '#FFC107')}
+                        onBlur={(e) => !isFieldUpdated('Vehicle Class') && (e.target.style.borderColor = '#0D0D0D')}
                         placeholder="Auto-filled from RC"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                         Fuel
                       </label>
                       <input
                         type="text"
                         value={vehicleForm.fuel}
                         onChange={(e) => setVehicleForm(prev => ({ ...prev, fuel: e.target.value }))}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all ${
                           isFieldUpdated('Fuel Type') 
-                            ? 'border-green-500 bg-green-50 text-green-800' 
-                            : 'border-gray-300 bg-white'
+                            ? 'border-green-500 text-green-400' 
+                            : ''
                         }`}
+                        style={{ 
+                          borderColor: isFieldUpdated('Fuel Type') ? '#4CAF50' : '#0D0D0D',
+                          backgroundColor: '#0D0D0D',
+                          color: '#FFFFFF'
+                        }}
+                        onFocus={(e) => !isFieldUpdated('Fuel Type') && (e.target.style.borderColor = '#FFC107')}
+                        onBlur={(e) => !isFieldUpdated('Fuel Type') && (e.target.style.borderColor = '#0D0D0D')}
                         placeholder="Auto-filled from RC"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                         Certificate of Fitness Valid From
                       </label>
                       <input
                         type="date"
                         value={vehicleForm.certificateOfFitnessFrom}
                         onChange={(e) => setVehicleForm(prev => ({ ...prev, certificateOfFitnessFrom: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all"
+                        style={{ borderColor: '#0D0D0D', backgroundColor: '#0D0D0D', color: '#FFFFFF' }}
+                        onFocus={(e) => e.target.style.borderColor = '#FFC107'}
+                        onBlur={(e) => e.target.style.borderColor = '#0D0D0D'}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                         Certificate of Fitness Valid To
                       </label>
                       <input
                         type="date"
                         value={vehicleForm.certificateOfFitnessTo}
                         onChange={(e) => setVehicleForm(prev => ({ ...prev, certificateOfFitnessTo: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all"
+                        style={{ borderColor: '#0D0D0D', backgroundColor: '#0D0D0D', color: '#FFFFFF' }}
+                        onFocus={(e) => e.target.style.borderColor = '#FFC107'}
+                        onBlur={(e) => e.target.style.borderColor = '#0D0D0D'}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                         Seating Capacity
                       </label>
                       <input
                         type="number"
                         value={vehicleForm.seatingCapacity}
                         onChange={(e) => setVehicleForm(prev => ({ ...prev, seatingCapacity: e.target.value }))}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all ${
                           isFieldUpdated('Seating Capacity') 
-                            ? 'border-green-500 bg-green-50 text-green-800' 
-                            : 'border-gray-300 bg-white'
+                            ? 'border-green-500 text-green-400' 
+                            : ''
                         }`}
+                        style={{ 
+                          borderColor: isFieldUpdated('Seating Capacity') ? '#4CAF50' : '#0D0D0D',
+                          backgroundColor: '#0D0D0D',
+                          color: '#FFFFFF'
+                        }}
+                        onFocus={(e) => !isFieldUpdated('Seating Capacity') && (e.target.style.borderColor = '#FFC107')}
+                        onBlur={(e) => !isFieldUpdated('Seating Capacity') && (e.target.style.borderColor = '#0D0D0D')}
                         placeholder={vehicleForm.seatingCapacity ? "Auto-filled from RC" : "Not found in RC - Enter manually"}
                         min="1"
                         max="100"
@@ -1470,18 +1305,21 @@ const BusinessDashboard = ({ onLogout }) => {
 
                 {/* Vehicle Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     Vehicle Type *
                   </label>
                   <select
                     value={vehicleForm.vehicleType}
                     onChange={(e) => setVehicleForm(prev => ({ ...prev, vehicleType: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all"
+                    style={{ borderColor: '#1F1F1F', backgroundColor: '#1F1F1F', color: '#FFFFFF' }}
+                    onFocus={(e) => e.target.style.borderColor = '#FFC107'}
+                    onBlur={(e) => e.target.style.borderColor = '#1F1F1F'}
                     required
                   >
-                    <option value="">Select Vehicle Type</option>
-                    <option value="Logistics">Logistics</option>
-                    <option value="Passenger">Passenger</option>
+                    <option value="" style={{ backgroundColor: '#1F1F1F' }}>Select Vehicle Type</option>
+                    <option value="Logistics" style={{ backgroundColor: '#1F1F1F' }}>Logistics</option>
+                    <option value="Passenger" style={{ backgroundColor: '#1F1F1F' }}>Passenger</option>
                   </select>
                 </div>
 
@@ -1493,18 +1331,24 @@ const BusinessDashboard = ({ onLogout }) => {
                       setShowEditVehicle(false);
                       setEditingVehicle(null);
                     }}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                    className="px-4 py-2 text-sm font-medium rounded-md border transition-all"
+                    style={{ borderColor: '#FFC107', color: '#FFC107', backgroundColor: 'transparent' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1F1F1F'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 rounded-md flex items-center"
+                    className="px-4 py-2 text-sm font-medium rounded-md flex items-center transition-all disabled:opacity-50"
+                    style={{ backgroundColor: '#FFC107', color: '#000000' }}
+                    onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#FFB300')}
+                    onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#FFC107')}
                   >
                     {loading ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 mr-2" style={{ borderColor: '#000000' }}></div>
                         Updating...
                       </>
                     ) : (
@@ -1520,17 +1364,20 @@ const BusinessDashboard = ({ onLogout }) => {
 
       {/* Vehicle Details Modal */}
       {showVehicleDetails && selectedVehicle && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 overflow-y-auto h-full w-full z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)' }}>
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-card rounded-md" style={{ backgroundColor: '#1F1F1F', borderColor: '#1F1F1F' }}>
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Vehicle Details</h3>
+                <h3 className="text-lg font-medium" style={{ color: '#FFC107' }}>Vehicle Details</h3>
                 <button
                   onClick={() => {
                     setShowVehicleDetails(false);
                     setSelectedVehicle(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="transition-colors"
+                  style={{ color: '#B0B0B0' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = '#B0B0B0'}
                 >
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1543,7 +1390,7 @@ const BusinessDashboard = ({ onLogout }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   {selectedVehicle.vehicleImage?.url && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Vehicle Image</h4>
+                      <h4 className="text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>Vehicle Image</h4>
                       <img
                         src={selectedVehicle.vehicleImage.url}
                         alt="Vehicle"
@@ -1554,7 +1401,7 @@ const BusinessDashboard = ({ onLogout }) => {
                   )}
                   {selectedVehicle.rcImage?.url && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">RC Document</h4>
+                      <h4 className="text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>RC Document</h4>
                       <img
                         src={selectedVehicle.rcImage.url}
                         alt="RC Document"
@@ -1569,49 +1416,49 @@ const BusinessDashboard = ({ onLogout }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Registration Number</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedVehicle.registeredNumber}</p>
+                      <label className="block text-sm font-medium" style={{ color: '#FFFFFF' }}>Registration Number</label>
+                      <p className="mt-1 text-sm" style={{ color: '#FFFFFF' }}>{selectedVehicle.registeredNumber}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Maker's Name</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedVehicle.makersName}</p>
+                      <label className="block text-sm font-medium" style={{ color: '#FFFFFF' }}>Maker's Name</label>
+                      <p className="mt-1 text-sm" style={{ color: '#FFFFFF' }}>{selectedVehicle.makersName}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Registered Owner</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedVehicle.registeredOwnerName}</p>
+                      <label className="block text-sm font-medium" style={{ color: '#FFFFFF' }}>Registered Owner</label>
+                      <p className="mt-1 text-sm" style={{ color: '#FFFFFF' }}>{selectedVehicle.registeredOwnerName}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Vehicle Class</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedVehicle.vehicleClass}</p>
+                      <label className="block text-sm font-medium" style={{ color: '#FFFFFF' }}>Vehicle Class</label>
+                      <p className="mt-1 text-sm" style={{ color: '#FFFFFF' }}>{selectedVehicle.vehicleClass}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Fuel Type</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedVehicle.fuel}</p>
+                      <label className="block text-sm font-medium" style={{ color: '#FFFFFF' }}>Fuel Type</label>
+                      <p className="mt-1 text-sm" style={{ color: '#FFFFFF' }}>{selectedVehicle.fuel}</p>
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     {selectedVehicle.vehicleType && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Vehicle Type</label>
-                        <p className="mt-1 text-sm text-gray-900">{selectedVehicle.vehicleType}</p>
+                        <label className="block text-sm font-medium" style={{ color: '#FFFFFF' }}>Vehicle Type</label>
+                        <p className="mt-1 text-sm" style={{ color: '#FFFFFF' }}>{selectedVehicle.vehicleType}</p>
                       </div>
                     )}
                     {selectedVehicle.seatingCapacity && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Seating Capacity</label>
-                        <p className="mt-1 text-sm text-gray-900">{selectedVehicle.seatingCapacity} seats</p>
+                        <label className="block text-sm font-medium" style={{ color: '#FFFFFF' }}>Seating Capacity</label>
+                        <p className="mt-1 text-sm" style={{ color: '#FFFFFF' }}>{selectedVehicle.seatingCapacity} seats</p>
                       </div>
                     )}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Added On</label>
-                      <p className="mt-1 text-sm text-gray-900">
+                      <label className="block text-sm font-medium" style={{ color: '#FFFFFF' }}>Added On</label>
+                      <p className="mt-1 text-sm" style={{ color: '#FFFFFF' }}>
                         {selectedVehicle.createdAt ? new Date(selectedVehicle.createdAt).toLocaleString() : 'N/A'}
                       </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Last Updated</label>
-                      <p className="mt-1 text-sm text-gray-900">
+                      <label className="block text-sm font-medium" style={{ color: '#FFFFFF' }}>Last Updated</label>
+                      <p className="mt-1 text-sm" style={{ color: '#FFFFFF' }}>
                         {selectedVehicle.lastUpdated ? new Date(selectedVehicle.lastUpdated).toLocaleString() : 'N/A'}
                       </p>
                     </div>
@@ -1621,11 +1468,11 @@ const BusinessDashboard = ({ onLogout }) => {
                 {/* Certificate of Fitness */}
                 {selectedVehicle.certificateOfFitness && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Certificate of Fitness</h4>
+                    <h4 className="text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>Certificate of Fitness</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-gray-500">Valid From</label>
-                        <p className="text-sm text-gray-900">
+                        <label className="block text-xs font-medium" style={{ color: '#B0B0B0' }}>Valid From</label>
+                        <p className="text-sm" style={{ color: '#FFFFFF' }}>
                           {selectedVehicle.certificateOfFitness.validFrom 
                             ? new Date(selectedVehicle.certificateOfFitness.validFrom).toLocaleDateString()
                             : 'N/A'
@@ -1633,8 +1480,8 @@ const BusinessDashboard = ({ onLogout }) => {
                         </p>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-500">Valid To</label>
-                        <p className="text-sm text-gray-900">
+                        <label className="block text-xs font-medium" style={{ color: '#B0B0B0' }}>Valid To</label>
+                        <p className="text-sm" style={{ color: '#FFFFFF' }}>
                           {selectedVehicle.certificateOfFitness.validTo 
                             ? new Date(selectedVehicle.certificateOfFitness.validTo).toLocaleDateString()
                             : 'N/A'
@@ -1647,13 +1494,13 @@ const BusinessDashboard = ({ onLogout }) => {
 
               </div>
 
-              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
+              <div className="flex justify-end space-x-3 mt-6 pt-4" style={{ borderColor: '#3a3a3a', borderTop: '1px solid' }}>
                 <button
                   onClick={() => {
                     setShowVehicleDetails(false);
                     setSelectedVehicle(null);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                  className="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ease-in-out border border-[#FFC107] text-[#FFC107] bg-transparent hover:bg-[#1F1F1F]"
                 >
                   Close
                 </button>
@@ -1663,7 +1510,7 @@ const BusinessDashboard = ({ onLogout }) => {
                     setSelectedVehicle(null);
                     handleEditVehicle(selectedVehicle);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+                  className="px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 ease-in-out bg-[#FFC107] text-black hover:bg-[#FFB300]"
                 >
                   Edit Vehicle
                 </button>
@@ -1696,30 +1543,36 @@ const BusinessDashboard = ({ onLogout }) => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 overflow-y-auto h-full w-full z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)' }}>
+          <div className="relative p-5 border w-96 shadow-card rounded-md" style={{ backgroundColor: '#1F1F1F', borderColor: '#1F1F1F' }}>
             <div className="mt-3 text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full" style={{ backgroundColor: 'rgba(244, 67, 54, 0.1)' }}>
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#F44336' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mt-4">Delete Vehicle</h3>
+              <h3 className="text-lg font-medium mt-4" style={{ color: '#FFC107' }}>Delete Vehicle</h3>
               <div className="mt-2 px-7 py-3">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm" style={{ color: '#B0B0B0' }}>
                   Are you sure you want to delete this vehicle? This action cannot be undone and will permanently remove the vehicle and all associated images.
                 </p>
               </div>
               <div className="flex justify-center space-x-3 mt-4">
                 <button
                   onClick={cancelDeleteVehicle}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  className="px-4 py-2 text-sm font-medium border rounded-md focus:outline-none transition-all duration-200 ease-in-out"
+                  style={{ borderColor: '#FFC107', color: '#FFC107', backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1F1F1F'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmDeleteVehicle}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none transition-all duration-200 ease-in-out"
+                  style={{ backgroundColor: '#F44336' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#D32F2F'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F44336'}
                 >
                   Delete Vehicle
                 </button>

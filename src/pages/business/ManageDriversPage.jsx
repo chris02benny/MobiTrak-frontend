@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
-const DriverManagementPage = () => {
-  const [hiredDrivers, setHiredDrivers] = useState([]);
-  const [loading, setLoading] = useState(false);
+const ManageDriversPage = ({ 
+  hiredDrivers = [],
+  hiredDriversLoading = false,
+  fetchHiredDrivers
+}) => {
   const [expandedDriver, setExpandedDriver] = useState(null);
   const [driverDetails, setDriverDetails] = useState({});
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -17,38 +19,6 @@ const DriverManagementPage = () => {
   const [actionReason, setActionReason] = useState('');
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
-
-  useEffect(() => {
-    fetchHiredDrivers();
-  }, []);
-
-  const fetchHiredDrivers = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const res = await fetch('/api/drivers/hired', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setHiredDrivers(Array.isArray(data.drivers) ? data.drivers : []);
-      } else {
-        console.error('Failed to fetch hired drivers', res.status);
-        toast.error('Failed to fetch hired drivers');
-      }
-    } catch (e) {
-      console.error('Error fetching hired drivers', e);
-      toast.error('Error fetching hired drivers');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchDriverDetails = async (driverId) => {
     try {
@@ -201,10 +171,6 @@ const DriverManagementPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold" style={{ color: '#FFC107' }}>Driver Management</h2>
-      </div>
-
       {/* Search and Filter Section */}
       <div className="rounded-lg shadow-sm border p-4" style={{ backgroundColor: '#1F1F1F', borderColor: '#4a4a4a' }}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-6">
@@ -246,7 +212,7 @@ const DriverManagementPage = () => {
       {/* Drivers List */}
       <div className="shadow rounded-lg" style={{ backgroundColor: '#1F1F1F' }}>
         <div className="p-6">
-          {loading ? (
+          {hiredDriversLoading ? (
             <div className="p-6 text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               <p className="mt-2" style={{ color: '#888888' }}>Loading drivers...</p>
@@ -509,5 +475,5 @@ const DriverManagementPage = () => {
   );
 };
 
-export default DriverManagementPage;
+export default ManageDriversPage;
 

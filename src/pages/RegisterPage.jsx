@@ -4,6 +4,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { validateEmail, validatePassword, validatePasswordMatch, validateRole, getPasswordStrengthColor, getPasswordStrengthText } from '../utils/validation';
+import { THEME_COLORS, getThemeStyles } from '../utils/theme';
 
 const RegisterPage = ({ onLogin }) => {
   const [formData, setFormData] = useState({
@@ -11,7 +12,6 @@ const RegisterPage = ({ onLogin }) => {
     password: '',
     confirmPassword: '',
     role: '',
-    phone: '',
     verificationCode: ''
   });
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,6 @@ const RegisterPage = ({ onLogin }) => {
     password: '',
     confirmPassword: '',
     role: '',
-    phone: '',
     verificationCode: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -81,12 +80,6 @@ const RegisterPage = ({ onLogin }) => {
         ...prev,
         role: roleValidation.message
       }));
-    } else if (name === 'phone') {
-      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-      setValidationErrors(prev => ({
-        ...prev,
-        phone: value && !phoneRegex.test(value) ? 'Please enter a valid phone number' : ''
-      }));
     }
   };
 
@@ -139,8 +132,7 @@ const RegisterPage = ({ onLogin }) => {
         email: formData.email,
         verificationCode: formData.verificationCode,
         password: formData.password,
-        role: formData.role,
-        phone: formData.phone
+        role: formData.role
       });
       
       toast.success('Registration successful! Welcome to MobiTrak!', {
@@ -180,7 +172,7 @@ const RegisterPage = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <motion.div 
         className="max-w-md w-full space-y-8"
         initial={{ opacity: 0, y: 20 }}
@@ -194,28 +186,29 @@ const RegisterPage = ({ onLogin }) => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div className="mx-auto h-12 w-12 bg-primary-400 rounded-lg flex items-center justify-center">
-            <svg className="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+          <div className="mx-auto h-12 w-12 bg-[#FFC107] rounded-lg flex items-center justify-center shadow-card">
+            <svg className="h-8 w-8 text-black" fill="currentColor" viewBox="0 0 20 20">
               <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
               <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 14H17a1 1 0 001-1V8a1 1 0 00-1-1h-3z" />
             </svg>
           </div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">MobiTrak</h2>
-          <p className="mt-1 text-sm text-gray-600">Join our fleet management platform</p>
+          <h2 className="mt-4 text-2xl font-bold text-white">MobiTrak</h2>
+          <p className="mt-1 text-sm text-[#B0B0B0]">Join our fleet management platform</p>
         </motion.div>
 
         {/* Registration Form */}
         <motion.div 
-          className="bg-white rounded-xl shadow-sm p-8"
+          className="rounded-xl shadow-card p-8"
+          style={getThemeStyles.card}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-white">
               Create Account
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#B0B0B0]">
               Sign up to get started
             </p>
           </div>
@@ -223,13 +216,13 @@ const RegisterPage = ({ onLogin }) => {
           <AnimatePresence>
             {error && (
               <motion.div 
-                className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md"
+                className="mb-4 p-3 bg-[#F44336] bg-opacity-10 border border-[#F44336] rounded-md"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <p className="text-sm text-red-600">{error}</p>
+                <p className="text-sm text-[#F44336]">{error}</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -241,54 +234,45 @@ const RegisterPage = ({ onLogin }) => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
                 >
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-white mb-1">
                 Email Address
               </label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-4 w-4 text-[#B0B0B0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  </svg>
+                </div>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="username"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className={`block w-full pl-10 pr-3 py-2 border rounded-lg text-sm focus:outline-none transition-all duration-200 ease-in-out ${
+                    validationErrors.email 
+                      ? 'border-[#F44336] focus:ring-2 focus:ring-[#F44336]' 
+                      : formData.email && !validationErrors.email 
+                        ? 'border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]' 
+                        : 'border-[#1F1F1F] focus:ring-2 focus:ring-[#FFC107]'
+                  }`}
+                  style={getThemeStyles.input}
+                  placeholder="Enter your email"
+                />
+                {formData.email && !validationErrors.email && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <svg className="h-4 w-4 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    autoComplete="username"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={`block w-full pl-10 pr-3 py-2 border rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                      validationErrors.email 
-                        ? 'border-red-300 focus:ring-red-500' 
-                        : formData.email && !validationErrors.email 
-                          ? 'border-green-300 focus:ring-green-500' 
-                          : 'border-gray-300'
-                    }`}
-                    placeholder="Enter your email"
-                  />
-                  {formData.email && !validationErrors.email && (
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                      <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={sendVerificationCode}
-                  disabled={sendingCode || !formData.email || validationErrors.email}
-                  className="px-4 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {sendingCode ? 'Sending...' : 'Send Code'}
-                </button>
+                )}
               </div>
               <AnimatePresence>
                 {validationErrors.email && (
                   <motion.p 
-                    className="mt-1 text-sm text-red-600"
+                    className="mt-1 text-sm text-[#F44336]"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -300,67 +284,13 @@ const RegisterPage = ({ onLogin }) => {
               </AnimatePresence>
             </motion.div>
 
-            {/* Phone Field */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-            >
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                Phone Number (Optional)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                </div>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className={`block w-full pl-10 pr-3 py-2 border rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                    validationErrors.phone 
-                      ? 'border-red-300 focus:ring-red-500' 
-                      : formData.phone && !validationErrors.phone 
-                        ? 'border-green-300 focus:ring-green-500' 
-                        : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your phone number"
-                />
-                {formData.phone && !validationErrors.phone && (
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                )}
-              </div>
-              <AnimatePresence>
-                {validationErrors.phone && (
-                  <motion.p 
-                    className="mt-1 text-sm text-red-600"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {validationErrors.phone}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
             {/* Role Selection Cards */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.6 }}
             >
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-medium text-white mb-3">
                 Account Type
               </label>
               <div className="grid grid-cols-1 gap-3">
@@ -408,10 +338,10 @@ const RegisterPage = ({ onLogin }) => {
                       // Clear role validation error when selecting
                       setValidationErrors(prev => ({ ...prev, role: '' }));
                     }}
-                    className={`relative p-4 rounded-lg border-2 transition-all duration-200 text-left ${
+                    className={`relative p-4 rounded-lg border-2 transition-all duration-200 ease-in-out text-left ${
                       formData.role === role.id
-                        ? `border-${role.color}-500 bg-${role.color}-50 ring-2 ring-${role.color}-200`
-                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                        ? 'border-[#FFC107] bg-[#1F1F1F] ring-2 ring-[#FFC107]'
+                        : 'border-[#1F1F1F] bg-[#1F1F1F] hover:border-[#FFC107]'
                     }`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -420,28 +350,20 @@ const RegisterPage = ({ onLogin }) => {
                     whileTap={{ scale: 0.98 }}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className={`flex-shrink-0 p-2 rounded-lg ${
-                        formData.role === role.id
-                          ? `bg-${role.color}-100 text-${role.color}-600`
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
+                      <div className="flex-shrink-0 p-2 rounded-lg bg-[#1F1F1F] text-[#FFC107]">
                         {role.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className={`text-sm font-medium ${
-                          formData.role === role.id ? `text-${role.color}-900` : 'text-gray-900'
-                        }`}>
+                        <h3 className="text-sm font-medium text-[#FFC107]">
                           {role.title}
                         </h3>
-                        <p className={`text-xs ${
-                          formData.role === role.id ? `text-${role.color}-700` : 'text-gray-500'
-                        }`}>
+                        <p className="text-xs text-[#FFC107]">
                           {role.description}
                         </p>
                       </div>
                       {formData.role === role.id && (
                         <div className="flex-shrink-0">
-                          <svg className={`h-5 w-5 text-${role.color}-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-5 w-5 text-[#FFC107]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
@@ -453,7 +375,7 @@ const RegisterPage = ({ onLogin }) => {
               <AnimatePresence>
                 {validationErrors.role && (
                   <motion.p 
-                    className="mt-2 text-sm text-red-600"
+                    className="mt-2 text-sm text-[#F44336]"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -470,14 +392,14 @@ const RegisterPage = ({ onLogin }) => {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
             >
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-white mb-1">
                 Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 text-[#B0B0B0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
@@ -489,20 +411,21 @@ const RegisterPage = ({ onLogin }) => {
                   autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`block w-full pl-10 pr-10 py-2 border rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
+                  className={`block w-full pl-10 pr-10 py-2 border rounded-lg text-sm focus:outline-none transition-all duration-200 ease-in-out ${
                     validationErrors.password 
-                      ? 'border-red-300 focus:ring-red-500' 
+                      ? 'border-[#F44336] focus:ring-2 focus:ring-[#F44336]' 
                       : formData.password && !validationErrors.password 
-                        ? 'border-green-300 focus:ring-green-500' 
-                        : 'border-gray-300'
+                        ? 'border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]' 
+                        : 'border-[#1F1F1F] focus:ring-2 focus:ring-[#FFC107]'
                   }`}
+                  style={getThemeStyles.input}
                   placeholder="Create a strong password"
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                    className="text-[#B0B0B0] hover:text-[#FFC107] focus:outline-none transition-colors"
                   >
                     {showPassword ? (
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -522,19 +445,19 @@ const RegisterPage = ({ onLogin }) => {
               {formData.password && (
                 <div className="mt-2">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-600">Password strength:</span>
+                    <span className="text-xs text-[#B0B0B0]">Password strength:</span>
                     <span className={`text-xs font-medium ${getPasswordStrengthColor(passwordStrength.level).replace('bg-', 'text-')}`}>
                       {getPasswordStrengthText(passwordStrength.level)}
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-[#0D0D0D] rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrengthColor(passwordStrength.level)}`}
                       style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
                     ></div>
                   </div>
                   {passwordStrength.feedback.length > 0 && (
-                    <div className="mt-1 text-xs text-gray-600">
+                    <div className="mt-1 text-xs text-[#B0B0B0]">
                       <p>Requirements:</p>
                       <ul className="list-disc list-inside ml-2">
                         {passwordStrength.feedback.map((req, index) => (
@@ -549,7 +472,7 @@ const RegisterPage = ({ onLogin }) => {
               <AnimatePresence>
                 {validationErrors.password && (
                   <motion.p 
-                    className="mt-1 text-sm text-red-600"
+                    className="mt-1 text-sm text-[#F44336]"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -565,14 +488,14 @@ const RegisterPage = ({ onLogin }) => {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
             >
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-white mb-1">
                 Confirm Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 text-[#B0B0B0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
@@ -584,20 +507,21 @@ const RegisterPage = ({ onLogin }) => {
                   autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className={`block w-full pl-10 pr-10 py-2 border rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
+                  className={`block w-full pl-10 pr-10 py-2 border rounded-lg text-sm focus:outline-none transition-all duration-200 ease-in-out ${
                     validationErrors.confirmPassword 
-                      ? 'border-red-300 focus:ring-red-500' 
+                      ? 'border-[#F44336] focus:ring-2 focus:ring-[#F44336]' 
                       : formData.confirmPassword && !validationErrors.confirmPassword 
-                        ? 'border-green-300 focus:ring-green-500' 
-                        : 'border-gray-300'
+                        ? 'border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]' 
+                        : 'border-[#1F1F1F] focus:ring-2 focus:ring-[#FFC107]'
                   }`}
+                  style={getThemeStyles.input}
                   placeholder="Confirm your password"
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                    className="text-[#B0B0B0] hover:text-[#FFC107] focus:outline-none transition-colors bg-transparent"
                   >
                     {showConfirmPassword ? (
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -613,7 +537,7 @@ const RegisterPage = ({ onLogin }) => {
                 </div>
                 {formData.confirmPassword && !validationErrors.confirmPassword && (
                   <div className="absolute inset-y-0 right-0 pr-10 flex items-center">
-                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-4 w-4 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
@@ -622,7 +546,7 @@ const RegisterPage = ({ onLogin }) => {
               <AnimatePresence>
                 {validationErrors.confirmPassword && (
                   <motion.p 
-                    className="mt-1 text-sm text-red-600"
+                    className="mt-1 text-sm text-[#F44336]"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -637,10 +561,11 @@ const RegisterPage = ({ onLogin }) => {
             <motion.button
               type="submit"
               disabled={loading || !isFormValid()}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-in-out"
+              style={getThemeStyles.primaryButton}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.9 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -666,22 +591,22 @@ const RegisterPage = ({ onLogin }) => {
               className="relative"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 1.0 }}
+              transition={{ duration: 0.5, delay: 0.8 }}
             >
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t border-[#1F1F1F]" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">or</span>
+                <span className="px-2 bg-[#1F1F1F] text-[#B0B0B0]">or</span>
               </div>
             </motion.div>
 
             <motion.button
               type="button"
-              className="w-full flex justify-center items-center py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
+              className="w-full flex justify-center items-center py-2 px-4 border border-[#FFC107] rounded-lg text-sm font-medium text-[#FFC107] bg-transparent hover:bg-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FFC107] transition-all duration-200 ease-in-out"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 1.1 }}
+              transition={{ duration: 0.5, delay: 0.9 }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -701,11 +626,11 @@ const RegisterPage = ({ onLogin }) => {
           className="text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 1.2 }}
+          transition={{ duration: 0.5, delay: 1.0 }}
         >
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-[#B0B0B0]">
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-primary-600 hover:text-primary-500 transition-colors">
+            <Link to="/login" className="font-medium text-[#FFC107] hover:text-[#FFB300] transition-colors">
               Sign In
             </Link>
           </p>
@@ -719,7 +644,7 @@ const RegisterPage = ({ onLogin }) => {
           transition={{ duration: 0.5, delay: 1.4 }}
         >
           <motion.button 
-            className="bg-purple-500 hover:bg-purple-600 text-white rounded-full p-3 shadow-lg transition-colors"
+            className="bg-[#FFC107] hover:bg-[#FFB300] text-black rounded-full p-3 shadow-card transition-all duration-200 ease-in-out"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
@@ -740,32 +665,32 @@ const RegisterPage = ({ onLogin }) => {
               transition={{ duration: 0.3 }}
             >
               <motion.div
-                className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+                className="bg-[#1F1F1F] rounded-xl shadow-card max-w-md w-full p-6"
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 transition={{ duration: 0.3 }}
               >
                 <div className="text-center mb-6">
-                  <div className="mx-auto h-12 w-12 bg-primary-400 rounded-lg flex items-center justify-center mb-4">
-                    <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="mx-auto h-12 w-12 bg-[#FFC107] rounded-lg flex items-center justify-center mb-4 shadow-card">
+                    <svg className="h-6 w-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Verify Your Email</h3>
-                  <p className="text-sm text-gray-600">
-                    Enter the 6-digit code sent to <span className="font-medium">{formData.email}</span>
+                  <h3 className="text-lg font-semibold text-[#FFC107] mb-2">Verify Your Email</h3>
+                  <p className="text-sm text-[#B0B0B0]">
+                    Enter the 6-digit code sent to <span className="font-medium text-white">{formData.email}</span>
                   </p>
                 </div>
 
                 <form onSubmit={(e) => { e.preventDefault(); verifyAndRegister(); }} className="space-y-4">
                   <div>
-                    <label htmlFor="modalVerificationCode" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="modalVerificationCode" className="block text-sm font-medium text-white mb-2">
                       Verification Code
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-4 w-4 text-[#B0B0B0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
@@ -778,19 +703,20 @@ const RegisterPage = ({ onLogin }) => {
                         autoComplete="one-time-code"
                         value={formData.verificationCode}
                         onChange={handleChange}
-                        className={`block w-full pl-10 pr-3 py-3 border rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors text-center text-lg tracking-widest ${
+                        className={`block w-full pl-10 pr-3 py-3 border rounded-lg text-sm focus:outline-none transition-all duration-200 ease-in-out text-center text-lg tracking-widest ${
                           validationErrors.verificationCode 
-                            ? 'border-red-300 focus:ring-red-500' 
+                            ? 'border-[#F44336] focus:ring-2 focus:ring-[#F44336]' 
                             : formData.verificationCode && !validationErrors.verificationCode 
-                              ? 'border-green-300 focus:ring-green-500' 
-                              : 'border-gray-300'
+                              ? 'border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]' 
+                              : 'border-[#1F1F1F] focus:ring-2 focus:ring-[#FFC107]'
                         }`}
+                        style={getThemeStyles.input}
                         placeholder="000000"
                         autoFocus
                       />
                       {formData.verificationCode && !validationErrors.verificationCode && (
                         <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                          <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-4 w-4 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
@@ -799,7 +725,7 @@ const RegisterPage = ({ onLogin }) => {
                     <AnimatePresence>
                       {validationErrors.verificationCode && (
                         <motion.p 
-                          className="mt-1 text-sm text-red-600"
+                          className="mt-1 text-sm text-[#F44336]"
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
@@ -815,14 +741,15 @@ const RegisterPage = ({ onLogin }) => {
                     <button
                       type="button"
                       onClick={() => setShowVerificationModal(false)}
-                      className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                      className="flex-1 py-2 px-4 border border-[#FFC107] rounded-lg text-sm font-medium text-[#FFC107] bg-transparent hover:bg-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FFC107] transition-all duration-200 ease-in-out"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={loading || !formData.verificationCode || formData.verificationCode.length !== 6}
-                      className="flex-1 py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex-1 py-2 px-4 border border-transparent rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-in-out"
+                      style={getThemeStyles.primaryButton}
                     >
                       {loading ? 'Verifying...' : 'Verify & Create Account'}
                     </button>
@@ -833,7 +760,7 @@ const RegisterPage = ({ onLogin }) => {
                       type="button"
                       onClick={resendCode}
                       disabled={sendingCode}
-                      className="text-sm text-primary-600 hover:text-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="text-sm text-primary-500 hover:text-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {sendingCode ? 'Sending...' : "Didn't receive the code? Resend"}
                     </button>

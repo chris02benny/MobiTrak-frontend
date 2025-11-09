@@ -274,25 +274,29 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         onClick={onClose}
       >
         <motion.div
-          className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+          className="rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+          style={{ backgroundColor: '#1F1F1F' }}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: '#0D0D0D' }}>
             <div className="flex items-center">
-              <div className="h-8 w-8 bg-primary-400 rounded-lg flex items-center justify-center mr-3">
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center mr-3" style={{ backgroundColor: '#FFC107' }}>
                 <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">Reset Password</h2>
+              <h2 className="text-xl font-semibold" style={{ color: '#FFC107' }}>Reset Password</h2>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="transition-colors"
+              style={{ color: '#B0B0B0' }}
+              onMouseEnter={(e) => e.target.style.color = '#FFFFFF'}
+              onMouseLeave={(e) => e.target.style.color = '#B0B0B0'}
             >
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -310,7 +314,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                       step >= stepNumber 
                         ? 'bg-primary-500 text-white' 
-                        : 'bg-gray-200 text-gray-500'
+                        : 'bg-gray-200 text-gray-400'
                     }`}>
                       {stepNumber}
                     </div>
@@ -333,8 +337,8 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                 className="space-y-4"
               >
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Enter your email address</h3>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <h3 className="text-lg font-medium mb-2" style={{ color: '#FFC107' }}>Enter your email address</h3>
+                  <p className="text-sm mb-4" style={{ color: '#888888' }}>
                     We'll send you a verification code to reset your password.
                   </p>
                 </div>
@@ -353,7 +357,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                 </AnimatePresence>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="email" className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     Email Address
                   </label>
                   <div className="relative">
@@ -375,7 +379,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                           ? 'border-red-300 focus:ring-red-500' 
                           : formData.email && !validationErrors.email 
                             ? 'border-green-300 focus:ring-green-500' 
-                            : 'border-gray-300'
+                            : 'border-gray-600'
                       }`}
                       placeholder="Enter your email"
                     />
@@ -430,9 +434,9 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                 className="space-y-4"
               >
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Enter verification code</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    We've sent a 6-digit code to <strong>{formData.email}</strong>
+                  <h3 className="text-lg font-medium mb-2" style={{ color: '#FFC107' }}>Enter verification code</h3>
+                  <p className="text-sm mb-4" style={{ color: '#B0B0B0' }}>
+                    We've sent a 6-digit code to <strong style={{ color: '#FFC107' }}>{formData.email}</strong>
                   </p>
                 </div>
 
@@ -450,7 +454,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                 </AnimatePresence>
 
                 <div>
-                  <label htmlFor="resetCode" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="resetCode" className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     Verification Code
                   </label>
                   <input
@@ -460,7 +464,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                     maxLength="6"
                     value={formData.resetCode}
                     onChange={handleChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-center text-lg tracking-widest"
+                    className="block w-full px-3 py-2 border border-gray-600 rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-center text-lg tracking-widest"
                     placeholder="000000"
                   />
                 </div>
@@ -468,14 +472,23 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                 <div className="flex space-x-3">
                   <button
                     onClick={handleBack}
-                    className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
+                    className="flex-1 py-2 px-4 rounded-lg text-sm font-medium focus:outline-none transition-all duration-200"
+                    style={{ 
+                      backgroundColor: '#1F1F1F', 
+                      color: '#FFFFFF',
+                      border: '1px solid #1F1F1F'
+                    }}
                   >
                     Back
                   </button>
                   <button
                     onClick={handleVerifyCode}
                     disabled={loading || !isCodeValid()}
-                    className="flex-1 py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    className="flex-1 py-2 px-4 rounded-lg text-sm font-medium focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    style={{ 
+                      backgroundColor: '#FFC107', 
+                      color: '#0D0D0D'
+                    }}
                   >
                     {loading ? 'Verifying...' : 'Verify Code'}
                   </button>
@@ -502,8 +515,8 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                 className="space-y-4"
               >
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Set new password</h3>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <h3 className="text-lg font-medium mb-2" style={{ color: '#FFC107' }}>Set new password</h3>
+                  <p className="text-sm mb-4" style={{ color: '#888888' }}>
                     Create a strong password for your account.
                   </p>
                 </div>
@@ -522,7 +535,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                 </AnimatePresence>
 
                 <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="newPassword" className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     New Password
                   </label>
                   <div className="relative">
@@ -542,7 +555,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                           ? 'border-red-300 focus:ring-red-500' 
                           : formData.newPassword && !validationErrors.newPassword 
                             ? 'border-green-300 focus:ring-green-500' 
-                            : 'border-gray-300'
+                            : 'border-gray-600'
                       }`}
                       placeholder="Enter new password"
                     />
@@ -550,7 +563,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                        className="text-gray-400 hover:text-gray-500 focus:outline-none transition-colors bg-transparent"
                       >
                         {showPassword ? (
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -570,7 +583,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                   {formData.newPassword && passwordStrength && (
                     <div className="mt-2">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-600">Password strength:</span>
+                        <span className="text-xs text-gray-400">Password strength:</span>
                         <span className={`text-xs font-medium ${
                           passwordStrength.level === 'weak' ? 'text-red-600' :
                           passwordStrength.level === 'fair' ? 'text-yellow-600' :
@@ -588,8 +601,8 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                       </div>
                       {passwordStrength.feedback.length > 0 && (
                         <div className="mt-1">
-                          <p className="text-xs text-gray-600">Requirements:</p>
-                          <ul className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-gray-400">Requirements:</p>
+                          <ul className="text-xs text-gray-400 mt-1">
                             {passwordStrength.feedback.map((feedback, index) => (
                               <li key={index} className="flex items-center">
                                 <span className="mr-1">•</span>
@@ -617,7 +630,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     Confirm New Password
                   </label>
                   <div className="relative">
@@ -637,7 +650,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                           ? 'border-red-300 focus:ring-red-500' 
                           : formData.confirmPassword && !validationErrors.confirmPassword 
                             ? 'border-green-300 focus:ring-green-500' 
-                            : 'border-gray-300'
+                            : 'border-gray-600'
                       }`}
                       placeholder="Confirm new password"
                     />
@@ -645,7 +658,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                        className="text-gray-400 hover:text-gray-500 focus:outline-none transition-colors bg-transparent"
                       >
                         {showConfirmPassword ? (
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -677,14 +690,23 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                 <div className="flex space-x-3">
                   <button
                     onClick={handleBack}
-                    className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
+                    className="flex-1 py-2 px-4 rounded-lg text-sm font-medium focus:outline-none transition-all duration-200"
+                    style={{ 
+                      backgroundColor: '#232323', 
+                      color: '#FFFFFF',
+                      border: '1px solid #3a3a3a'
+                    }}
                   >
                     Back
                   </button>
                   <button
                     onClick={handleResetPassword}
                     disabled={loading || !isPasswordValid()}
-                    className="flex-1 py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    className="flex-1 py-2 px-4 rounded-lg text-sm font-medium focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    style={{ 
+                      backgroundColor: '#FEEE00', 
+                      color: '#000000'
+                    }}
                   >
                     {loading ? 'Resetting...' : 'Reset Password'}
                   </button>

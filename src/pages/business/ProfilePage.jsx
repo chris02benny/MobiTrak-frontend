@@ -590,33 +590,22 @@ const ProfilePage = ({ onProfileUpdate }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ minHeight: '100vh', backgroundColor: '#0D0D0D', padding: '2rem' }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Business Profile</h1>
-          <p className="text-gray-600 mt-1">Manage your business information and location</p>
+          <h1 className="text-3xl font-bold" style={{ color: '#FFC107' }}>Business Profile</h1>
+          <p className="mt-1" style={{ color: '#B0B0B0' }}>Manage your business information and location</p>
         </div>
-        {!isEditing && businessProfile && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg font-medium flex items-center transition-colors"
-          >
-            <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            Edit Profile
-          </button>
-        )}
       </div>
 
       {/* Profile Form */}
       <form onSubmit={saveBusinessProfile} className="space-y-6" noValidate>
-        <div className="bg-white rounded-lg shadow-sm border border-yellow-200 overflow-hidden">
+        <div className="rounded-lg shadow-sm border overflow-hidden" style={{ backgroundColor: '#1F1F1F', borderColor: '#4a4a4a' }}>
           {/* Profile Header */}
-          <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 px-6 py-8">
+          <div className="px-6 py-8" style={{ background: 'linear-gradient(to right, #FFC107, #FFB300)' }}>
             <div className="flex items-center">
-              <div className="h-20 w-20 bg-white rounded-full flex items-center justify-center overflow-hidden shadow-lg">
+              <div className="h-20 w-20 rounded-full flex items-center justify-center overflow-hidden shadow-lg" style={{ backgroundColor: '#1F1F1F' }}>
                 {formData.profileIcon ? (
                   <img
                     src={formData.profileIcon}
@@ -629,11 +618,11 @@ const ProfilePage = ({ onProfileUpdate }) => {
                   </svg>
                 )}
               </div>
-              <div className="ml-6 text-white">
+              <div className="ml-6" style={{ color: '#000000' }}>
                 <h2 className="text-2xl font-bold">{formData.companyName || 'Company Name'}</h2>
-                <p className="text-yellow-100 text-lg">{formData.ownerName || 'Owner Name'}</p>
+                <p className="text-lg" style={{ color: '#333333' }}>{formData.ownerName || 'Owner Name'}</p>
                 {formData.address.city && (
-                  <p className="text-yellow-200 text-sm mt-1">
+                  <p className="text-sm mt-1" style={{ color: '#555555' }}>
                     {formData.address.city}, {formData.address.state}
                   </p>
                 )}
@@ -645,11 +634,11 @@ const ProfilePage = ({ onProfileUpdate }) => {
           <div className="p-6 space-y-6">
             {/* Profile Icon Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
                 Profile Icon
               </label>
               <div className="flex items-center space-x-4">
-                <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                <div className="h-16 w-16 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
                   {formData.profileIcon ? (
                     <img
                       src={formData.profileIcon}
@@ -667,7 +656,7 @@ const ProfilePage = ({ onProfileUpdate }) => {
                   type="file"
                   accept="image/*"
                   onChange={(e) => handleImageUpload(e, 'profileIcon')}
-                  className="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100"
+                  className="block text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100"
                 />
               </div>
             </div>
@@ -675,7 +664,7 @@ const ProfilePage = ({ onProfileUpdate }) => {
             {/* Company Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                   Email Address
                 </label>
                 <input
@@ -683,14 +672,15 @@ const ProfilePage = ({ onProfileUpdate }) => {
                   name="email"
                   value={formData.email}
                   disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                  className="w-full px-3 py-2 border rounded-full cursor-not-allowed"
+                  style={{ backgroundColor: '#0D0D0D', color: '#B0B0B0', borderColor: '#FFFFFF', borderWidth: '1px' }}
                   placeholder="Email address"
                 />
-                <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                <p className="text-xs mt-1" style={{ color: '#B0B0B0' }}>Email cannot be changed</p>
               </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     Contact Number
                   </label>
                   <input
@@ -698,35 +688,35 @@ const ProfilePage = ({ onProfileUpdate }) => {
                     name="contactNumber"
                     value={formData.contactNumber}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2 border rounded-full focus:outline-none focus:ring-1 focus:ring-yellow-500" style={{ backgroundColor: '#0D0D0D', color: '#FFFFFF', borderColor: '#FFFFFF', borderWidth: '1px' }}
                     placeholder="Enter contact number"
                   />
                 </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Company Name
+                <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
+                    Company Name
                 </label>
                 <input
                   type="text"
                   name="companyName"
                   value={formData.companyName}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="w-full px-3 py-2 border rounded-full focus:outline-none focus:ring-1 focus:ring-yellow-500" style={{ backgroundColor: '#0D0D0D', color: '#FFFFFF', borderColor: '#FFFFFF', borderWidth: '1px' }}
                   placeholder="Enter company name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Owner Name
+                <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
+                    Owner Name
                 </label>
                 <input
                   type="text"
                   name="ownerName"
                   value={formData.ownerName}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="w-full px-3 py-2 border rounded-full focus:outline-none focus:ring-1 focus:ring-yellow-500" style={{ backgroundColor: '#0D0D0D', color: '#FFFFFF', borderColor: '#FFFFFF', borderWidth: '1px' }}
                   placeholder="Enter owner name"
                 />
               </div>
@@ -734,7 +724,7 @@ const ProfilePage = ({ onProfileUpdate }) => {
 
             {/* PAN Card Section */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <h3 className="text-lg font-semibold mb-4 flex items-center" style={{ color: "#FFFFFF" }}>
                 <svg className="h-5 w-5 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -743,11 +733,11 @@ const ProfilePage = ({ onProfileUpdate }) => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
                     PAN Card Image
                   </label>
                   <div className="flex items-center space-x-4">
-                    <div className="h-16 w-16 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden">
+                    <div className="h-16 w-16 rounded-lg bg-gray-700 flex items-center justify-center overflow-hidden">
                       {formData.panCardImage ? (
                         <img
                           src={formData.panCardImage}
@@ -765,10 +755,10 @@ const ProfilePage = ({ onProfileUpdate }) => {
                       type="file"
                       accept="image/*"
                       onChange={(e) => handleImageUpload(e, 'panCardImage')}
-                      className="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100"
+                      className="block text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100"
                     />
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-gray-400">
                     Upload a clear image of your PAN card. We'll automatically extract the PAN number.
                     <br />
                     <span className="text-yellow-600 font-medium">
@@ -786,7 +776,7 @@ const ProfilePage = ({ onProfileUpdate }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     PAN Card Number
                   </label>
                   <div className="flex space-x-2">
@@ -795,10 +785,10 @@ const ProfilePage = ({ onProfileUpdate }) => {
                       name="panCard"
                       value={formData.panCard}
                       onChange={handleInputChange}
-                      className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 ${
+                      className={`flex-1 px-3 py-2 border rounded-full focus:outline-none focus:ring-1 focus:ring-yellow-500 ${
                         isFieldUpdated('PAN Card Number') 
                           ? 'border-green-500 bg-green-50 text-green-800' 
-                          : 'border-gray-300'
+                          : 'border-white'
                       }`}
                       placeholder="ABCDE1234F"
                       style={{ textTransform: 'uppercase' }}
@@ -815,7 +805,7 @@ const ProfilePage = ({ onProfileUpdate }) => {
                           toast.error('Please enter a valid PAN number (e.g., ABCDE1234F)');
                         }
                       }}
-                      className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 text-sm font-medium"
+                      className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 text-sm font-medium"
                     >
                       Validate
                     </button>
@@ -823,7 +813,7 @@ const ProfilePage = ({ onProfileUpdate }) => {
                   {isFieldUpdated('PAN Card Number') && (
                     <p className="text-xs text-green-600 mt-1">✓ Auto-extracted from image</p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     Format: 5 letters, 4 numbers, 1 letter (e.g., ABCDE1234F)
                   </p>
                 </div>
@@ -832,7 +822,7 @@ const ProfilePage = ({ onProfileUpdate }) => {
 
             {/* Address */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <h3 className="text-lg font-semibold mb-4 flex items-center" style={{ color: "#FFFFFF" }}>
                 <svg className="h-5 w-5 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -841,7 +831,7 @@ const ProfilePage = ({ onProfileUpdate }) => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     Address Line 1
                   </label>
                   <input
@@ -849,13 +839,13 @@ const ProfilePage = ({ onProfileUpdate }) => {
                     name="address.line1"
                     value={formData.address.line1}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2 border rounded-full focus:outline-none focus:ring-1 focus:ring-yellow-500" style={{ backgroundColor: '#0D0D0D', color: '#FFFFFF', borderColor: '#FFFFFF', borderWidth: '1px' }}
                     placeholder="Street address"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     Address Line 2
                   </label>
                   <input
@@ -863,13 +853,13 @@ const ProfilePage = ({ onProfileUpdate }) => {
                     name="address.line2"
                     value={formData.address.line2}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2 border rounded-full focus:outline-none focus:ring-1 focus:ring-yellow-500" style={{ backgroundColor: '#0D0D0D', color: '#FFFFFF', borderColor: '#FFFFFF', borderWidth: '1px' }}
                     placeholder="Apartment, suite, etc. (optional)"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     City
                   </label>
                   <input
@@ -877,13 +867,13 @@ const ProfilePage = ({ onProfileUpdate }) => {
                     name="address.city"
                     value={formData.address.city}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2 border rounded-full focus:outline-none focus:ring-1 focus:ring-yellow-500" style={{ backgroundColor: '#0D0D0D', color: '#FFFFFF', borderColor: '#FFFFFF', borderWidth: '1px' }}
                     placeholder="City"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     State
                   </label>
                   <input
@@ -891,13 +881,13 @@ const ProfilePage = ({ onProfileUpdate }) => {
                     name="address.state"
                     value={formData.address.state}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2 border rounded-full focus:outline-none focus:ring-1 focus:ring-yellow-500" style={{ backgroundColor: '#0D0D0D', color: '#FFFFFF', borderColor: '#FFFFFF', borderWidth: '1px' }}
                     placeholder="State"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     Pincode
                   </label>
                   <input
@@ -905,13 +895,13 @@ const ProfilePage = ({ onProfileUpdate }) => {
                     name="address.pincode"
                     value={formData.address.pincode}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2 border rounded-full focus:outline-none focus:ring-1 focus:ring-yellow-500" style={{ backgroundColor: '#0D0D0D', color: '#FFFFFF', borderColor: '#FFFFFF', borderWidth: '1px' }}
                     placeholder="123456"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>
                     Country
                   </label>
                   <input
@@ -919,77 +909,16 @@ const ProfilePage = ({ onProfileUpdate }) => {
                     name="address.country"
                     value={formData.address.country}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2 border rounded-full focus:outline-none focus:ring-1 focus:ring-yellow-500" style={{ backgroundColor: '#0D0D0D', color: '#FFFFFF', borderColor: '#FFFFFF', borderWidth: '1px' }}
                     placeholder="Country"
                   />
                 </div>
-              </div>
-
-              {/* Address Validation */}
-              <div className="mt-4">
-                <div className="flex items-center space-x-2">
-                  <button
-                    type="button"
-                    onClick={validateAddress}
-                    disabled={addressValidation.loading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center"
-                  >
-                    {addressValidation.loading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Validating...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Validate Address
-                      </>
-                    )}
-                  </button>
-                  
-                  {addressValidation.isValid !== null && (
-                    <div className="flex items-center">
-                      {addressValidation.isValid ? (
-                        <div className="flex items-center text-green-600">
-                          <svg className="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          <span className="text-sm font-medium">Valid Address</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center text-red-600">
-                          <svg className="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                          </svg>
-                          <span className="text-sm font-medium">Invalid Address</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {addressValidation.suggestions.length > 0 && (
-                  <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <h6 className="text-sm font-medium text-blue-900 mb-2">Address Suggestions</h6>
-                    {addressValidation.suggestions.map((suggestion, index) => (
-                      <div key={index} className="text-sm text-blue-800">
-                        <p><strong>Suggested:</strong> {suggestion.address}</p>
-                        <p><strong>Confidence:</strong> {Math.round(suggestion.confidence * 100)}%</p>
-                        {suggestion.confidence > 0.7 && (
-                          <p className="text-green-600 font-medium">✓ High confidence - location auto-set</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
 
             {/* Location Section */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <h3 className="text-lg font-semibold mb-4 flex items-center" style={{ color: "#FFFFFF" }}>
                 <svg className="h-5 w-5 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                 </svg>
@@ -1002,7 +931,7 @@ const ProfilePage = ({ onProfileUpdate }) => {
                     type="button"
                     onClick={getCurrentLocation}
                     disabled={locationLoading}
-                    className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:bg-gray-400 flex items-center"
+                    className="px-4 py-2 bg-yellow-600 text-white rounded-full hover:bg-yellow-700 disabled:bg-gray-400 flex items-center"
                   >
                     {locationLoading ? (
                       <>
@@ -1024,7 +953,7 @@ const ProfilePage = ({ onProfileUpdate }) => {
                     type="button"
                     onClick={geocodeAddress}
                     disabled={locationLoading}
-                    className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:bg-gray-400 flex items-center"
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 disabled:bg-gray-400 flex items-center"
                   >
                     {locationLoading ? (
                       <>
@@ -1045,7 +974,7 @@ const ProfilePage = ({ onProfileUpdate }) => {
                     <button
                       type="button"
                       onClick={clearLocation}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
+                      className="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 flex items-center"
                     >
                       <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1081,17 +1010,17 @@ const ProfilePage = ({ onProfileUpdate }) => {
                   </div>
                 )}
 
-                <div className="border border-gray-300 rounded-lg overflow-hidden">
-                  <div className="bg-gray-100 px-4 py-2 text-sm text-gray-600 border-b">
+                <div className="border border-white rounded-lg overflow-hidden">
+                  <div className="bg-gray-800 px-4 py-2 text-sm text-gray-400 border-b">
                     Click on the map to set your business location
                   </div>
                   {mapError ? (
-                    <div className="h-64 w-full bg-gray-100 flex items-center justify-center">
+                    <div className="h-64 w-full bg-gray-800 flex items-center justify-center">
                       <div className="text-center">
                         <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                         </svg>
-                        <p className="mt-2 text-sm text-gray-600">Map failed to load</p>
+                        <p className="mt-2 text-sm text-gray-400">Map failed to load</p>
                         <button 
                           onClick={() => {
                             setMapError(false);
@@ -1122,14 +1051,14 @@ const ProfilePage = ({ onProfileUpdate }) => {
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                className="px-6 py-2 text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 rounded-full"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="px-6 py-2 text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 rounded-md flex items-center"
+                className="px-6 py-2 text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 rounded-full flex items-center"
               >
                 {saving ? (
                   <>
@@ -1149,3 +1078,8 @@ const ProfilePage = ({ onProfileUpdate }) => {
 };
 
 export default ProfilePage;
+
+
+
+
+

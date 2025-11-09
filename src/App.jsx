@@ -6,12 +6,16 @@ import RegisterPage from './pages/RegisterPage';
 import BusinessDashboard from './pages/BusinessDashboard';
 import CustomerDashboard from './pages/CustomerDashboard';
 import DriverDashboard from './pages/DriverDashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Apply dark theme to HTML element
+    document.documentElement.classList.add('dark');
+    
     // Check if user is logged in
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
@@ -49,7 +53,7 @@ function App() {
         v7_relativeSplatPath: true
       }}
     >
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#0D0D0D]">
         <Routes>
           <Route 
             path="/login" 
@@ -71,6 +75,10 @@ function App() {
             path="/driver/dashboard" 
             element={user?.role === 'driver' ? <DriverDashboard onLogout={handleLogout} /> : <Navigate to="/login" />} 
           />
+          <Route 
+            path="/admin/dashboard" 
+            element={user?.role === 'admin' ? <AdminDashboard onLogout={handleLogout} /> : <Navigate to="/login" />} 
+          />
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
         <Toaster 
@@ -78,21 +86,22 @@ function App() {
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#363636',
-              color: '#fff',
+              background: '#1F1F1F',
+              color: '#FFFFFF',
+              border: '1px solid #FFC107',
             },
             success: {
               duration: 3000,
               iconTheme: {
-                primary: '#10B981',
-                secondary: '#fff',
+                primary: '#4CAF50',
+                secondary: '#FFFFFF',
               },
             },
             error: {
               duration: 4000,
               iconTheme: {
-                primary: '#EF4444',
-                secondary: '#fff',
+                primary: '#F44336',
+                secondary: '#FFFFFF',
               },
             },
           }}

@@ -570,52 +570,28 @@ const EnquiriesPage = () => {
       case 'trip_created': return 'bg-green-100 text-green-800';
       case 'confirmed': return 'bg-green-100 text-green-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-700 text-gray-800';
     }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Customer Enquiries</h2>
-        <div className="flex space-x-2">
-          <button 
-            onClick={fetchEnquiries} 
-            disabled={loading}
-            className="text-sm px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </button>
-          <button 
-            onClick={async () => {
-              await fetchEnquiries();
-              toast.success('Enquiries refreshed');
-            }} 
-            disabled={loading}
-            className="text-sm px-3 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Refreshing...' : 'Force Refresh'}
-          </button>
-        </div>
+        <h2 className="text-2xl font-bold" style={{ color: '#FFC107' }}>Enquiries</h2>
       </div>
 
-      <div className="bg-white shadow rounded-lg">
-        <div className="p-4 border-b">
-          <h3 className="text-lg font-medium text-gray-900">All Enquiries ({enquiries.length})</h3>
-        </div>
-        
-        {loading ? (
-          <div className="p-6">Loading enquiries...</div>
-        ) : enquiries.length === 0 ? (
-          <div className="p-6 text-gray-600">No enquiries yet.</div>
-        ) : (
-          <div className="p-4 space-y-4">
-            {enquiries.map((enquiry) => (
-              <div key={enquiry._id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+      {loading ? (
+        <div className="p-6 rounded-lg" style={{ backgroundColor: '#1F1F1F', color: '#B0B0B0' }}>Loading enquiries...</div>
+      ) : enquiries.length === 0 ? (
+        <div className="p-6 rounded-lg" style={{ backgroundColor: '#1F1F1F', color: '#B0B0B0' }}>No enquiries yet.</div>
+      ) : (
+        <div className="space-y-4">
+          {enquiries.map((enquiry) => (
+            <div key={enquiry._id} className="rounded-lg p-4 hover:shadow-md transition-shadow" style={{ backgroundColor: '#1F1F1F' }}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium" style={{ color: '#FFC107' }}>
                         {enquiry.vehicleId?.registeredNumber} - {enquiry.vehicleId?.makersName}
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(enquiry.status)}`}>
@@ -623,20 +599,20 @@ const EnquiriesPage = () => {
                       </span>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 mb-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mb-2" style={{ color: '#888888' }}>
                       <div>
-                        <strong>Customer:</strong> {enquiry.customerId?.name || enquiry.customerId?.email}
+                        <strong style={{ color: '#FFFFFF' }}>Customer:</strong> {enquiry.customerId?.name || enquiry.customerId?.email}
                       </div>
                       <div>
-                        <strong>Vehicle Class:</strong> {enquiry.vehicleId?.vehicleClass}
+                        <strong style={{ color: '#FFFFFF' }}>Vehicle Class:</strong> {enquiry.vehicleId?.vehicleClass}
                       </div>
                     </div>
                     
-                    <div className="text-sm text-gray-600 mb-2">
-                      <strong>Route:</strong> {enquiry.startingPoint} → {enquiry.destination}
+                    <div className="text-sm mb-2" style={{ color: '#888888' }}>
+                      <strong style={{ color: '#FFFFFF' }}>Route:</strong> {enquiry.startingPoint} → {enquiry.destination}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 mb-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-400 mb-2">
                       <div>
                         <strong>Dates:</strong> {new Date(enquiry.startDate).toLocaleDateString()} - {new Date(enquiry.endDate).toLocaleDateString()}
                       </div>
@@ -648,7 +624,7 @@ const EnquiriesPage = () => {
                     </div>
                     
                     {enquiry.message && (
-                      <div className="text-sm text-gray-600 mb-2">
+                      <div className="text-sm text-gray-400 mb-2">
                         <strong>Message:</strong> {enquiry.message}
                       </div>
                     )}
@@ -670,7 +646,7 @@ const EnquiriesPage = () => {
                   <div className="flex flex-col space-y-2 ml-4">
                     <button
                       onClick={() => openEnquiryDetails(enquiry)}
-                      className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm"
+                      className="bg-gray-8000 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm"
                     >
                       View Details
                     </button>
@@ -688,19 +664,21 @@ const EnquiriesPage = () => {
               </div>
             ))}
           </div>
-        )}
-      </div>
-
+        )
+      }
 
       {/* Enhanced Create Trip Modal */}
       {showCreateTripModal && selectedEnquiry && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4 p-6 border-b">
-              <h3 className="text-lg font-medium text-gray-900">Create Trip from Enquiry</h3>
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)' }}>
+          <div className="rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#1F1F1F' }}>
+            <div className="flex items-center justify-between mb-4 p-6 border-b" style={{ borderColor: '#0D0D0D' }}>
+              <h3 className="text-lg font-medium" style={{ color: '#FFC107' }}>Create Trip from Enquiry</h3>
               <button
                 onClick={() => setShowCreateTripModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="transition-colors"
+                style={{ color: '#B0B0B0' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#B0B0B0'}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -709,11 +687,11 @@ const EnquiriesPage = () => {
             </div>
             
             <div className="p-6">
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <div className="text-sm font-medium text-gray-900">
+              <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#0D0D0D' }}>
+                <div className="text-sm font-medium" style={{ color: '#FFC107' }}>
                   {selectedEnquiry.vehicleId?.registeredNumber} - {selectedEnquiry.vehicleId?.makersName}
                 </div>
-                <div className="text-xs text-gray-600">
+                <div className="text-xs" style={{ color: '#B0B0B0' }}>
                   {selectedEnquiry.startingPoint} → {selectedEnquiry.destination}
                 </div>
               </div>
@@ -723,24 +701,30 @@ const EnquiriesPage = () => {
                 <div className="space-y-4">
                   {/* Route Selection */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Route</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>Route</label>
                     <div className="space-y-2">
                       {tripForm.waypoints?.map((waypoint, index) => (
                         <div key={index} className="relative">
                           <input
                             value={waypoint?.address || ''}
                             onChange={(e) => handlePlaceSearch(index, e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
+                            style={{ borderColor: '#1F1F1F', backgroundColor: '#1F1F1F', color: '#FFFFFF' }}
+                            onFocus={(e) => e.target.style.borderColor = '#FFC107'}
+                            onBlur={(e) => e.target.style.borderColor = '#1F1F1F'}
                             placeholder={index === 0 ? 'Starting point...' : 'Destination...'}
                           />
                           {suggestions[index]?.length > 0 && (
-                            <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-40 overflow-auto">
+                            <div className="absolute z-10 w-full mt-1 border rounded-lg shadow-lg max-h-40 overflow-auto" style={{ backgroundColor: '#1F1F1F', borderColor: '#0D0D0D' }}>
                               {suggestions[index].map((suggestion, sIndex) => (
                                 <button
                                   key={sIndex}
                                   type="button"
                                   onClick={() => pickSuggestion(index, suggestion)}
-                                  className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                                  className="w-full text-left px-3 py-2 text-sm transition-colors"
+                                  style={{ color: '#FFFFFF' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0D0D0D'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                 >
                                   {suggestion.display}
                                 </button>
@@ -754,7 +738,7 @@ const EnquiriesPage = () => {
 
                   {/* Driver Selection */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Driver</label>
+                    <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>Select Driver</label>
                     <select
                       value={tripForm.driverId}
                       onChange={(e) => {
@@ -765,11 +749,14 @@ const EnquiriesPage = () => {
                           driverBata: selectedDriver?.acceptedSalary || 0
                         }));
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
+                      style={{ borderColor: '#1F1F1F', backgroundColor: '#1F1F1F', color: '#FFFFFF' }}
+                      onFocus={(e) => e.target.style.borderColor = '#FFC107'}
+                      onBlur={(e) => e.target.style.borderColor = '#1F1F1F'}
                     >
-                      <option value="">Select a driver</option>
+                      <option value="" style={{ backgroundColor: '#1F1F1F' }}>Select a driver</option>
                       {drivers.map((driver) => (
-                        <option key={driver._id} value={driver._id}>
+                        <option key={driver._id} value={driver._id} style={{ backgroundColor: '#1F1F1F' }}>
                           {driver.name} - {driver.licenseNumber} 
                           {driver.acceptedSalary > 0 && ` (₹${driver.acceptedSalary}/day)`}
                         </option>
@@ -780,22 +767,28 @@ const EnquiriesPage = () => {
                   {/* Pricing */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Distance (km)</label>
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>Distance (km)</label>
                       <input
                         type="number"
                         value={tripForm.distanceKm}
                         onChange={(e) => setTripForm(prev => ({ ...prev, distanceKm: parseFloat(e.target.value) }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
+                        style={{ borderColor: '#1F1F1F', backgroundColor: '#1F1F1F', color: '#FFFFFF' }}
+                        onFocus={(e) => e.target.style.borderColor = '#FFC107'}
+                        onBlur={(e) => e.target.style.borderColor = '#1F1F1F'}
                         placeholder="Distance in km"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Rate per km (₹)</label>
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>Rate per km (₹)</label>
                       <input
                         type="number"
                         value={tripForm.ratePerKm}
                         onChange={(e) => setTripForm(prev => ({ ...prev, ratePerKm: parseFloat(e.target.value) }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
+                        style={{ borderColor: '#1F1F1F', backgroundColor: '#1F1F1F', color: '#FFFFFF' }}
+                        onFocus={(e) => e.target.style.borderColor = '#FFC107'}
+                        onBlur={(e) => e.target.style.borderColor = '#1F1F1F'}
                         placeholder="Rate per km"
                       />
                     </div>
@@ -803,22 +796,28 @@ const EnquiriesPage = () => {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Rent (₹)</label>
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>Vehicle Rent (₹)</label>
                       <input
                         type="number"
                         value={tripForm.vehicleRent}
                         onChange={(e) => setTripForm(prev => ({ ...prev, vehicleRent: parseFloat(e.target.value) }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
+                        style={{ borderColor: '#1F1F1F', backgroundColor: '#1F1F1F', color: '#FFFFFF' }}
+                        onFocus={(e) => e.target.style.borderColor = '#FFC107'}
+                        onBlur={(e) => e.target.style.borderColor = '#1F1F1F'}
                         placeholder="Vehicle rent"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Driver Bata (₹)</label>
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>Driver Bata (₹)</label>
                       <input
                         type="number"
                         value={tripForm.driverBata}
                         onChange={(e) => setTripForm(prev => ({ ...prev, driverBata: parseFloat(e.target.value) }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 transition-all"
+                        style={{ borderColor: '#1F1F1F', backgroundColor: '#1F1F1F', color: '#FFFFFF' }}
+                        onFocus={(e) => e.target.style.borderColor = '#FFC107'}
+                        onBlur={(e) => e.target.style.borderColor = '#1F1F1F'}
                         placeholder="Driver bata"
                       />
                     </div>
@@ -826,18 +825,18 @@ const EnquiriesPage = () => {
                   
 
                   {/* Total Amount Display */}
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-blue-800">
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: '#0D0D0D', border: '1px solid #FFC107' }}>
+                    <div className="text-sm" style={{ color: '#FFC107' }}>
                       <strong>Total Amount:</strong> ₹{((tripForm.distanceKm * tripForm.ratePerKm) + tripForm.vehicleRent + tripForm.driverBata).toLocaleString()}
                     </div>
-                    <div className="text-xs text-blue-600">
+                    <div className="text-xs" style={{ color: '#B0B0B0' }}>
                       Advance Required: ₹{Math.round(((tripForm.distanceKm * tripForm.ratePerKm) + tripForm.vehicleRent + tripForm.driverBata) * 20 / 100).toLocaleString()}
                     </div>
                   </div>
                 </div>
 
                 {/* Right Column - Map */}
-                <div className="bg-gray-100 rounded-lg overflow-hidden">
+                <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#0D0D0D' }}>
                   <div id="trip-map" className="w-full h-96"></div>
                 </div>
               </div>
@@ -845,14 +844,20 @@ const EnquiriesPage = () => {
               <div className="flex justify-end space-x-3 mt-6">
                 <button
                   onClick={() => setShowCreateTripModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
+                  className="px-4 py-2 text-sm font-medium rounded-lg border transition-all"
+                  style={{ borderColor: '#FFC107', color: '#FFC107', backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1F1F1F'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={createTripFromEnquiry}
                   disabled={!tripForm.driverId || !tripForm.distanceKm || !tripForm.ratePerKm || !selectedEnquiry || (selectedEnquiry.status !== 'pending' && selectedEnquiry.status !== 'responded')}
-                  className="px-4 py-2 text-sm font-medium text-white bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-lg"
+                  className="px-4 py-2 text-sm font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: '#4CAF50', color: '#FFFFFF' }}
+                  onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#45A049')}
+                  onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4CAF50')}
                 >
                   Create Trip & Send Payment Request
                 </button>
@@ -864,13 +869,16 @@ const EnquiriesPage = () => {
 
       {/* Enquiry Details Modal */}
       {showEnquiryDetails && selectedEnquiryDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)' }}>
+          <div className="rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#1F1F1F' }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Enquiry Details</h3>
+              <h3 className="text-lg font-medium" style={{ color: '#FFC107' }}>Enquiry Details</h3>
               <button
                 onClick={() => setShowEnquiryDetails(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="transition-colors"
+                style={{ color: '#B0B0B0' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#B0B0B0'}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -880,57 +888,57 @@ const EnquiriesPage = () => {
             
             <div className="space-y-4">
               {/* Vehicle Information */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Vehicle Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                  <div><strong>Registration:</strong> {selectedEnquiryDetails.vehicleId?.registeredNumber}</div>
-                  <div><strong>Make/Model:</strong> {selectedEnquiryDetails.vehicleId?.makersName}</div>
-                  <div><strong>Class:</strong> {selectedEnquiryDetails.vehicleId?.vehicleClass}</div>
-                  <div><strong>Type:</strong> {selectedEnquiryDetails.vehicleId?.vehicleType}</div>
-                  <div><strong>Seating:</strong> {selectedEnquiryDetails.vehicleId?.seatingCapacity} seats</div>
+              <div className="p-4 rounded-lg" style={{ backgroundColor: '#0D0D0D' }}>
+                <h4 className="font-medium mb-2" style={{ color: '#FFC107' }}>Vehicle Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm" style={{ color: '#FFFFFF' }}>
+                  <div><strong style={{ color: '#FFC107' }}>Registration:</strong> {selectedEnquiryDetails.vehicleId?.registeredNumber}</div>
+                  <div><strong style={{ color: '#FFC107' }}>Make/Model:</strong> {selectedEnquiryDetails.vehicleId?.makersName}</div>
+                  <div><strong style={{ color: '#FFC107' }}>Class:</strong> {selectedEnquiryDetails.vehicleId?.vehicleClass}</div>
+                  <div><strong style={{ color: '#FFC107' }}>Type:</strong> {selectedEnquiryDetails.vehicleId?.vehicleType}</div>
+                  <div><strong style={{ color: '#FFC107' }}>Seating:</strong> {selectedEnquiryDetails.vehicleId?.seatingCapacity} seats</div>
                 </div>
               </div>
 
               {/* Customer Information */}
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Customer Information</h4>
-                <div className="text-sm">
-                  <div><strong>Name:</strong> {selectedEnquiryDetails.customerId?.name || 'N/A'}</div>
-                  <div><strong>Email:</strong> {selectedEnquiryDetails.customerId?.email}</div>
+              <div className="p-4 rounded-lg" style={{ backgroundColor: '#0D0D0D' }}>
+                <h4 className="font-medium mb-2" style={{ color: '#FFC107' }}>Customer Information</h4>
+                <div className="text-sm" style={{ color: '#FFFFFF' }}>
+                  <div><strong style={{ color: '#FFC107' }}>Name:</strong> {selectedEnquiryDetails.customerId?.name || 'N/A'}</div>
+                  <div><strong style={{ color: '#FFC107' }}>Email:</strong> {selectedEnquiryDetails.customerId?.email}</div>
                 </div>
               </div>
 
               {/* Trip Details */}
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Trip Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                  <div><strong>From:</strong> {selectedEnquiryDetails.startingPoint}</div>
-                  <div><strong>To:</strong> {selectedEnquiryDetails.destination}</div>
-                  <div><strong>Start Date:</strong> {new Date(selectedEnquiryDetails.startDate).toLocaleDateString()}</div>
-                  <div><strong>End Date:</strong> {new Date(selectedEnquiryDetails.endDate).toLocaleDateString()}</div>
+              <div className="p-4 rounded-lg" style={{ backgroundColor: '#0D0D0D' }}>
+                <h4 className="font-medium mb-2" style={{ color: '#FFC107' }}>Trip Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm" style={{ color: '#FFFFFF' }}>
+                  <div><strong style={{ color: '#FFC107' }}>From:</strong> {selectedEnquiryDetails.startingPoint}</div>
+                  <div><strong style={{ color: '#FFC107' }}>To:</strong> {selectedEnquiryDetails.destination}</div>
+                  <div><strong style={{ color: '#FFC107' }}>Start Date:</strong> {new Date(selectedEnquiryDetails.startDate).toLocaleDateString()}</div>
+                  <div><strong style={{ color: '#FFC107' }}>End Date:</strong> {new Date(selectedEnquiryDetails.endDate).toLocaleDateString()}</div>
                   {selectedEnquiryDetails.distanceKm > 0 && (
-                    <div><strong>Distance:</strong> {selectedEnquiryDetails.distanceKm} km</div>
+                    <div><strong style={{ color: '#FFC107' }}>Distance:</strong> {selectedEnquiryDetails.distanceKm} km</div>
                   )}
                 </div>
               </div>
 
               {/* Customer Message */}
               {selectedEnquiryDetails.message && (
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Customer Message</h4>
-                  <p className="text-sm text-gray-700">{selectedEnquiryDetails.message}</p>
+                <div className="p-4 rounded-lg" style={{ backgroundColor: '#0D0D0D' }}>
+                  <h4 className="font-medium mb-2" style={{ color: '#FFC107' }}>Customer Message</h4>
+                  <p className="text-sm" style={{ color: '#FFFFFF' }}>{selectedEnquiryDetails.message}</p>
                 </div>
               )}
 
               {/* Business Response */}
               {selectedEnquiryDetails.businessResponse?.message && (
-                <div className="bg-purple-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Your Response</h4>
-                  <p className="text-sm text-gray-700 mb-2">{selectedEnquiryDetails.businessResponse.message}</p>
-                  <div className="text-xs text-gray-500">
+                <div className="p-4 rounded-lg" style={{ backgroundColor: '#0D0D0D' }}>
+                  <h4 className="font-medium mb-2" style={{ color: '#FFC107' }}>Your Response</h4>
+                  <p className="text-sm mb-2" style={{ color: '#FFFFFF' }}>{selectedEnquiryDetails.businessResponse.message}</p>
+                  <div className="text-xs" style={{ color: '#B0B0B0' }}>
                     <strong>Advance Percentage:</strong> {selectedEnquiryDetails.businessResponse.advancePercentage}%
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs" style={{ color: '#B0B0B0' }}>
                     <strong>Responded:</strong> {new Date(selectedEnquiryDetails.businessResponse.respondedAt).toLocaleString()}
                   </div>
                 </div>
@@ -938,27 +946,27 @@ const EnquiriesPage = () => {
 
               {/* Trip Information */}
               {selectedEnquiryDetails.status === 'trip_created' && (
-                <div className="bg-green-100 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Trip Information</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                    <div><strong>Total Amount:</strong> ₹{selectedEnquiryDetails.totalAmount?.toLocaleString()}</div>
-                    <div><strong>Advance Required:</strong> ₹{selectedEnquiryDetails.advanceAmount?.toLocaleString()}</div>
-                    <div><strong>Payment Status:</strong> {selectedEnquiryDetails.paymentStatus}</div>
+                <div className="p-4 rounded-lg" style={{ backgroundColor: '#0D0D0D', border: '1px solid #4CAF50' }}>
+                  <h4 className="font-medium mb-2" style={{ color: '#4CAF50' }}>Trip Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm" style={{ color: '#FFFFFF' }}>
+                    <div><strong style={{ color: '#4CAF50' }}>Total Amount:</strong> ₹{selectedEnquiryDetails.totalAmount?.toLocaleString()}</div>
+                    <div><strong style={{ color: '#4CAF50' }}>Advance Required:</strong> ₹{selectedEnquiryDetails.advanceAmount?.toLocaleString()}</div>
+                    <div><strong style={{ color: '#4CAF50' }}>Payment Status:</strong> {selectedEnquiryDetails.paymentStatus}</div>
                     {selectedEnquiryDetails.tripId && (
-                      <div><strong>Trip ID:</strong> {selectedEnquiryDetails.tripId.trip_id}</div>
+                      <div><strong style={{ color: '#4CAF50' }}>Trip ID:</strong> {selectedEnquiryDetails.tripId.trip_id}</div>
                     )}
                   </div>
                 </div>
               )}
 
               {/* Status */}
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Status</h4>
+              <div className="p-4 rounded-lg" style={{ backgroundColor: '#0D0D0D' }}>
+                <h4 className="font-medium mb-2" style={{ color: '#FFC107' }}>Status</h4>
                 <div className="flex items-center space-x-2">
                   <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(selectedEnquiryDetails.status)}`}>
                     {selectedEnquiryDetails.status.replace('_', ' ')}
                   </span>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm" style={{ color: '#B0B0B0' }}>
                     Created: {new Date(selectedEnquiryDetails.createdAt).toLocaleString()}
                   </span>
                 </div>
@@ -968,7 +976,10 @@ const EnquiriesPage = () => {
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowEnquiryDetails(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
+                className="px-4 py-2 text-sm font-medium rounded-lg border transition-all"
+                style={{ borderColor: '#FFC107', color: '#FFC107', backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1F1F1F'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 Close
               </button>
@@ -980,7 +991,10 @@ const EnquiriesPage = () => {
                       // TODO: Implement reject functionality
                       console.log('Reject enquiry:', selectedEnquiryDetails._id);
                     }}
-                    className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg"
+                    className="px-4 py-2 text-sm font-medium rounded-lg transition-all"
+                    style={{ backgroundColor: '#F44336', color: '#FFFFFF' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#D32F2F'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F44336'}
                   >
                     Reject
                   </button>
@@ -989,7 +1003,10 @@ const EnquiriesPage = () => {
                       setShowEnquiryDetails(false);
                       openCreateTripModal(selectedEnquiryDetails);
                     }}
-                    className="px-4 py-2 text-sm font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg"
+                    className="px-4 py-2 text-sm font-medium rounded-lg transition-all"
+                    style={{ backgroundColor: '#4CAF50', color: '#FFFFFF' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#45A049'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4CAF50'}
                   >
                     Create Trip
                   </button>

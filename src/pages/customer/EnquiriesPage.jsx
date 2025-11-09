@@ -65,8 +65,9 @@ const EnquiriesPage = () => {
   };
 
   // Handle payment completion
-  const handlePaymentComplete = (result) => {
-    console.log('Payment completed:', result);
+  const handlePaymentComplete = () => {
+    console.log('Payment completed successfully');
+    toast.success('Payment completed! Your trip has been confirmed.');
     fetchEnquiries(); // Refresh enquiries
   };
 
@@ -92,7 +93,7 @@ const EnquiriesPage = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">My Enquiries</h2>
+        <h2 className="text-2xl font-bold" style={{ color: '#FEEE00' }}>My Enquiries</h2>
         <button 
           onClick={fetchEnquiries} 
           className="text-sm px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700"
@@ -101,20 +102,20 @@ const EnquiriesPage = () => {
         </button>
       </div>
 
-      <div className="bg-white shadow rounded-lg">
-        <div className="p-4 border-b">
-          <h3 className="text-lg font-medium text-gray-900">Enquiry History</h3>
+      <div className="shadow rounded-lg" style={{ backgroundColor: '#232323' }}>
+        <div className="p-4 border-b" style={{ borderColor: '#3a3a3a' }}>
+          <h3 className="text-lg font-medium" style={{ color: '#FEEE00' }}>Enquiry History</h3>
         </div>
         {loading ? (
           <div className="p-6">Loading enquiries...</div>
         ) : enquiries.length === 0 ? (
-          <div className="p-6 text-gray-600">No enquiries yet.</div>
+          <div className="p-6 text-gray-400">No enquiries yet.</div>
         ) : (
           <div className="p-4 space-y-4">
             {enquiries.map((enquiry) => (
               <div key={enquiry._id} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-yellow-500">
                     {enquiry.vehicleId?.registeredNumber} - {enquiry.vehicleId?.makersName}
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs ${
@@ -126,10 +127,10 @@ const EnquiriesPage = () => {
                     {enquiry.status.replace('_', ' ')}
                   </span>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-400">
                   Route: {enquiry.startingPoint} → {enquiry.destination}
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-400">
                   Dates: {new Date(enquiry.startDate).toLocaleDateString()} - {new Date(enquiry.endDate).toLocaleDateString()}
                 </div>
                 {enquiry.businessResponse?.message && (
@@ -148,7 +149,7 @@ const EnquiriesPage = () => {
                       >
                         Pay Now
                       </button>
-                      <span className="text-xs text-gray-600">
+                      <span className="text-xs text-gray-400">
                         Choose to pay advance or full amount
                       </span>
                     </div>
@@ -167,8 +168,13 @@ const EnquiriesPage = () => {
           setShowPaymentModal(false);
           setSelectedEnquiry(null);
         }}
-        enquiry={selectedEnquiry}
-        onSubmit={handlePaymentComplete}
+        tripDetails={selectedEnquiry ? {
+          route: `${selectedEnquiry.startingPoint} → ${selectedEnquiry.destination}`,
+          dates: `${new Date(selectedEnquiry.startDate).toLocaleDateString()} - ${new Date(selectedEnquiry.endDate).toLocaleDateString()}`,
+          distance: selectedEnquiry.distanceKm || 'N/A',
+          totalAmount: selectedEnquiry.totalAmount || 0
+        } : null}
+        onPaymentSuccess={handlePaymentComplete}
       />
     </div>
   );

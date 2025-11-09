@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-const ProfilePage = () => {
+const ProfilePage = ({ onProfileUpdate }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -149,6 +149,11 @@ const ProfilePage = () => {
       setImagePreview(data.profile.profilePicture);
       setProfileImage(null);
       toast.success('Profile updated successfully!');
+      
+      // Update navbar if callback is provided
+      if (onProfileUpdate) {
+        onProfileUpdate();
+      }
     } catch (error) {
       console.error('Save profile error:', error);
       toast.error(error.message || 'Failed to update profile');
@@ -165,8 +170,8 @@ const ProfilePage = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900">Profile Settings</h2>
-        <div className="bg-white shadow rounded-lg p-6">
+        <h2 className="text-2xl font-bold" style={{ color: '#FEEE00' }}>Profile Settings</h2>
+        <div className="shadow rounded-lg p-6" style={{ backgroundColor: '#232323' }}>
           <div className="animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
             <div className="h-4 bg-gray-200 rounded w-1/2"></div>
@@ -178,9 +183,9 @@ const ProfilePage = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Profile Settings</h2>
+      <h2 className="text-2xl font-bold" style={{ color: '#FEEE00' }}>Profile Settings</h2>
       
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="shadow rounded-lg p-6" style={{ backgroundColor: '#232323' }}>
         <div className="space-y-6">
           {/* Profile Picture Section */}
           <div className="flex items-center space-x-6">
@@ -193,7 +198,7 @@ const ProfilePage = () => {
                 />
               ) : (
                 <div className="h-24 w-24 rounded-full bg-gray-300 flex items-center justify-center">
-                  <svg className="h-12 w-12 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="h-12 w-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                   </svg>
                 </div>
@@ -206,65 +211,65 @@ const ProfilePage = () => {
                   type="file"
                   accept="image/*"
                   onChange={handleImageSelect}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                  className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                 />
               </label>
-              <p className="mt-1 text-sm text-gray-500">JPG, PNG or GIF. Max size 5MB.</p>
+              <p className="mt-1 text-sm text-gray-400">JPG, PNG or GIF. Max size 5MB.</p>
             </div>
           </div>
 
           {/* Email (Read-only) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Email Address
             </label>
             <input
               type="email"
               value={profile?.email || ''}
               disabled
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-50 text-gray-400 cursor-not-allowed"
             />
-            <p className="mt-1 text-sm text-gray-500">Email cannot be changed</p>
+            <p className="mt-1 text-sm text-gray-400">Email cannot be changed</p>
           </div>
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Full Name
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="Enter your full name"
             />
           </div>
 
           {/* Phone */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Contact Number
             </label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="Enter your contact number"
             />
           </div>
 
           {/* Address */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Address
             </label>
             <textarea
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="Enter your address"
             />
           </div>

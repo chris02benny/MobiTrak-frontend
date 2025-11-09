@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 
-const HirePage = ({ 
+const AddDriversPage = ({ 
   activeSubTab, 
   setActiveSubTab,
   drivers, 
@@ -675,5 +675,5 @@ const HirePage = ({
   );
 };
 
-export default HirePage;
+export default AddDriversPage;
 

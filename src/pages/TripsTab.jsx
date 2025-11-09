@@ -288,27 +288,27 @@ const TripsTab = ({ vehicles, onRefreshVehicles }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 bg-white shadow rounded-lg p-6 space-y-4">
+        <div className="lg:col-span-1 shadow rounded-lg p-6 space-y-4" style={{ backgroundColor: '#1F1F1F' }}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-700">Route</label>
-              <button type="button" onClick={addWaypoint} className="text-blue-600 hover:text-blue-800 text-sm">Add destination</button>
+              <label className="block text-sm font-medium" style={{ color: '#FFC107' }}>Route</label>
+              <button type="button" onClick={addWaypoint} className="text-sm rounded-full px-3 py-1" style={{ backgroundColor: '#FFC107', color: '#000000' }}>Add destination</button>
             </div>
             <div className="space-y-3">
               {form.waypoints.map((w, idx) => (
                 <div key={idx} className="relative">
                   <div className="flex items-center gap-2">
-                    <input value={w.address || ''} onChange={(e) => handleSearchChange(idx, e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder={idx === 0 ? 'Choose starting point...' : (idx === form.waypoints.length - 1 ? 'Choose destination...' : `Stop ${idx}`)} />
+                    <input value={w.address || ''} onChange={(e) => handleSearchChange(idx, e.target.value)} className="flex-1 px-3 py-2 rounded-md focus:ring-1 focus:ring-yellow-500" placeholder={idx === 0 ? 'Choose starting point...' : (idx === form.waypoints.length - 1 ? 'Choose destination...' : `Stop ${idx}`)} />
                     <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => moveWaypoint(idx, Math.max(0, idx - 1))} disabled={idx === 0} className="p-2 rounded border disabled:opacity-40" title="Move up">↑</button>
-                      <button type="button" onClick={() => moveWaypoint(idx, Math.min(form.waypoints.length - 1, idx + 1))} disabled={idx === form.waypoints.length - 1} className="p-2 rounded border disabled:opacity-40" title="Move down">↓</button>
-                      <button type="button" onClick={() => removeWaypoint(idx)} disabled={form.waypoints.length <= 2 && (idx === 0 || idx === form.waypoints.length - 1)} className="p-2 rounded border disabled:opacity-40" title="Remove">✕</button>
+                      <button type="button" onClick={() => moveWaypoint(idx, Math.max(0, idx - 1))} disabled={idx === 0} className="p-2 rounded-full disabled:opacity-40" style={{ border: '1px solid #FFFFFF' }} title="Move up">↑</button>
+                      <button type="button" onClick={() => moveWaypoint(idx, Math.min(form.waypoints.length - 1, idx + 1))} disabled={idx === form.waypoints.length - 1} className="p-2 rounded-full disabled:opacity-40" style={{ border: '1px solid #FFFFFF' }} title="Move down">↓</button>
+                      <button type="button" onClick={() => removeWaypoint(idx)} disabled={form.waypoints.length <= 2 && (idx === 0 || idx === form.waypoints.length - 1)} className="p-2 rounded-full disabled:opacity-40" style={{ border: '1px solid #FFFFFF' }} title="Remove">✕</button>
                     </div>
                   </div>
                   {Array.isArray(suggestions[idx]) && suggestions[idx].length > 0 && (
-                    <div className="border rounded mt-1 bg-white max-h-40 overflow-auto z-10">
+                    <div className="rounded mt-1 max-h-40 overflow-auto z-10" style={{ border: '1px solid #FFFFFF', backgroundColor: '#1F1F1F' }}>
                       {suggestions[idx].map((s, sidx) => (
-                        <button key={`wg-${idx}-${sidx}`} type="button" onClick={() => pickSuggestion(idx, s)} className="w-full text-left px-3 py-2 hover:bg-gray-100">
+                        <button key={`wg-${idx}-${sidx}`} type="button" onClick={() => pickSuggestion(idx, s)} className="w-full text-left px-3 py-2" style={{ color: '#FFFFFF', borderBottom: '1px solid #4a4a4a' }}>
                           {s.display}
                         </button>
                       ))}
@@ -317,39 +317,39 @@ const TripsTab = ({ vehicles, onRefreshVehicles }) => {
                 </div>
               ))}
               {form.waypoints.length < 2 && (
-                <p className="text-xs text-gray-500">Add at least a start and a destination.</p>
+                <p className="text-xs" style={{ color: '#888888' }}>Add at least a start and a destination.</p>
               )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start date</label>
-                <input type="date" min={todayStr()} max={maxDateStr()} value={form.startDate} onChange={(e) => setForm(prev => ({ ...prev, startDate: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>Start date</label>
+                <input type="date" min={todayStr()} max={maxDateStr()} value={form.startDate} onChange={(e) => setForm(prev => ({ ...prev, startDate: e.target.value }))} className="w-full px-3 py-2 rounded-md focus:ring-1 focus:ring-yellow-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End date</label>
-                <input type="date" min={form.startDate || todayStr()} max={maxDateStr()} value={form.endDate} onChange={(e) => setForm(prev => ({ ...prev, endDate: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>End date</label>
+                <input type="date" min={form.startDate || todayStr()} max={maxDateStr()} value={form.endDate} onChange={(e) => setForm(prev => ({ ...prev, endDate: e.target.value }))} className="w-full px-3 py-2 rounded-md focus:ring-1 focus:ring-yellow-500" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Driver bata (per day)</label>
-                <input type="number" min="0" value={form.driverBata} onChange={(e) => setForm(prev => ({ ...prev, driverBata: Number(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
+                <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>Driver bata (per day)</label>
+                <input type="number" min="0" value={form.driverBata} onChange={(e) => setForm(prev => ({ ...prev, driverBata: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-md focus:ring-1 focus:ring-yellow-500" placeholder="0" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rate per km</label>
-                <input type="number" min="0" value={form.ratePerKm} onChange={(e) => setForm(prev => ({ ...prev, ratePerKm: Number(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
+                <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>Rate per km</label>
+                <input type="number" min="0" value={form.ratePerKm} onChange={(e) => setForm(prev => ({ ...prev, ratePerKm: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-md focus:ring-1 focus:ring-yellow-500" placeholder="0" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle rent (per day)</label>
-                <input type="number" min="0" value={form.vehicleRent} onChange={(e) => setForm(prev => ({ ...prev, vehicleRent: Number(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
+                <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>Vehicle rent (per day)</label>
+                <input type="number" min="0" value={form.vehicleRent} onChange={(e) => setForm(prev => ({ ...prev, vehicleRent: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-md focus:ring-1 focus:ring-yellow-500" placeholder="0" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle</label>
-              <select value={form.vehicleId} onChange={(e) => setForm(prev => ({ ...prev, vehicleId: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>Vehicle</label>
+              <select value={form.vehicleId} onChange={(e) => setForm(prev => ({ ...prev, vehicleId: e.target.value }))} className="w-full px-3 py-2 rounded-md focus:ring-1 focus:ring-yellow-500">
                 <option value="">Select vehicle</option>
                 {vehicles.map(v => (
                   <option key={v._id} value={v._id} disabled={unavailable.vehicles.has(String(v._id))}>
@@ -360,8 +360,8 @@ const TripsTab = ({ vehicles, onRefreshVehicles }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Driver</label>
-              <select value={form.driverId} onChange={(e) => setForm(prev => ({ ...prev, driverId: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <label className="block text-sm font-medium mb-1" style={{ color: '#FFFFFF' }}>Driver</label>
+              <select value={form.driverId} onChange={(e) => setForm(prev => ({ ...prev, driverId: e.target.value }))} className="w-full px-3 py-2 rounded-md focus:ring-1 focus:ring-yellow-500">
                 <option value="">Select driver</option>
                 {drivers.map(d => (
                   <option key={d._id || d.id} value={d._id || d.id} disabled={unavailable.drivers.has(String(d._id || d.id))}>
@@ -371,21 +371,21 @@ const TripsTab = ({ vehicles, onRefreshVehicles }) => {
               </select>
             </div>
 
-            <div className="w-full text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-md p-3 flex flex-wrap gap-6">
-              <div>Days: <span className="font-medium">{form.numDays}</span></div>
-              <div>Distance: <span className="font-medium">{form.distanceKm} km</span> <button type="button" onClick={computeRoute} className="ml-2 text-blue-600 hover:text-blue-800">Recompute</button></div>
-              <div>Total: <span className="font-semibold">₹ {form.totalAmount.toLocaleString()}</span></div>
+            <div className="w-full text-sm rounded-md p-3 flex flex-wrap gap-6" style={{ backgroundColor: '#0D0D0D', border: '1px solid #FFC107', color: '#FFFFFF' }}>
+              <div>Days: <span className="font-medium" style={{ color: '#FFC107' }}>{form.numDays}</span></div>
+              <div>Distance: <span className="font-medium" style={{ color: '#FFC107' }}>{form.distanceKm} km</span> <button type="button" onClick={computeRoute} className="ml-2 rounded-full px-2 py-1" style={{ backgroundColor: '#FFC107', color: '#000000' }}>Recompute</button></div>
+              <div>Total: <span className="font-semibold" style={{ color: '#FFC107' }}>₹ {form.totalAmount.toLocaleString()}</span></div>
             </div>
 
             <div className="flex justify-end">
-              <button type="submit" disabled={loading || (form.waypoints.filter(w => w?.coords).length < 2) || !form.vehicleId || !form.driverId || !form.startDate || !form.endDate} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm disabled:bg-gray-400">
+              <button type="submit" disabled={loading || (form.waypoints.filter(w => w?.coords).length < 2) || !form.vehicleId || !form.driverId || !form.startDate || !form.endDate} className="px-6 py-2 rounded-full text-sm disabled:opacity-40" style={{ backgroundColor: '#FFC107', color: '#000000' }}>
                 {loading ? 'Creating...' : 'Create Trip'}
               </button>
             </div>
           </form>
         </div>
 
-        <div className="lg:col-span-2 bg-white shadow rounded-lg p-2 overflow-hidden">
+        <div className="lg:col-span-2 shadow rounded-lg p-2 overflow-hidden" style={{ backgroundColor: '#1F1F1F' }}>
           <div ref={mapRef} className="w-full h-[480px] rounded-md overflow-hidden" />
         </div>
       </div>

@@ -12,13 +12,16 @@ const FleetPage = ({
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Fleet Management</h2>
+        <h2 className="text-2xl font-bold" style={{ color: '#FFC107' }}>Fleet Management</h2>
         <button
           onClick={() => {
             clearVehicleForm();
             setShowAddVehicle(true);
           }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center"
+          className="px-4 py-2 rounded-lg text-sm font-medium flex items-center transition-colors"
+          style={{ backgroundColor: '#FFC107', color: '#0D0D0D' }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FFB300'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFC107'}
         >
           <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -28,30 +31,33 @@ const FleetPage = ({
       </div>
 
       {/* Vehicles List */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Your Vehicles ({vehicles.length})</h3>
+      <div className="shadow rounded-lg" style={{ backgroundColor: '#1F1F1F' }}>
+        <div className="px-6 py-4 border-b" style={{ borderColor: '#0D0D0D' }}>
+          <h3 className="text-lg font-medium" style={{ color: '#FFC107' }}>Your Vehicles ({vehicles.length})</h3>
         </div>
         
         {loading ? (
           <div className="p-6 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-gray-600">Loading vehicles...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#FFC107' }}></div>
+            <p className="mt-2" style={{ color: '#B0B0B0' }}>Loading vehicles...</p>
           </div>
         ) : vehicles.length === 0 ? (
           <div className="p-6 text-center">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="mx-auto h-12 w-12" style={{ color: '#B0B0B0' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No vehicles</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by adding your first vehicle.</p>
+            <h3 className="mt-2 text-sm font-medium" style={{ color: '#FFC107' }}>No vehicles</h3>
+            <p className="mt-1 text-sm" style={{ color: '#B0B0B0' }}>Get started by adding your first vehicle.</p>
             <div className="mt-6">
               <button
                 onClick={() => {
                   clearVehicleForm();
                   setShowAddVehicle(true);
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                style={{ backgroundColor: '#FFC107', color: '#0D0D0D' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FFB300'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFC107'}
               >
                 Add Vehicle
               </button>
@@ -61,7 +67,7 @@ const FleetPage = ({
           <div className="p-6">
             <div className="space-y-4">
               {vehicles.map((vehicle) => (
-                <div key={vehicle._id} className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                <div key={vehicle._id} className="rounded-lg shadow-sm hover:shadow-md transition-shadow" style={{ backgroundColor: '#0D0D0D', border: '1px solid #1F1F1F' }}>
                   <div className="flex">
                     {/* Left Column - Vehicle Image */}
                     <div className="w-1/3 p-4">
@@ -72,8 +78,8 @@ const FleetPage = ({
                           className="w-full h-40 object-cover rounded-md"
                         />
                       ) : (
-                        <div className="w-full h-40 bg-gray-200 rounded-md flex items-center justify-center">
-                          <svg className="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-full h-40 rounded-md flex items-center justify-center" style={{ backgroundColor: '#1F1F1F' }}>
+                          <svg className="h-12 w-12" style={{ color: '#B0B0B0' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
                           </svg>
                         </div>
@@ -84,10 +90,10 @@ const FleetPage = ({
                     <div className="w-2/3 p-4 flex flex-col justify-between">
                       <div className="space-y-3">
                         <div>
-                          <h3 className="text-xl font-semibold text-gray-900">
+                          <h3 className="text-xl font-semibold" style={{ color: '#FFC107' }}>
                             {vehicle.registeredNumber}
                           </h3>
-                          <p className="text-sm text-gray-600">{vehicle.makersName}</p>
+                          <p className="text-sm" style={{ color: '#FFFFFF' }}>{vehicle.makersName}</p>
                         </div>
                         
                         <div className="flex items-center justify-between">
@@ -96,12 +102,12 @@ const FleetPage = ({
                               {vehicle.make} ({vehicle.year})
                             </p> */}
                             {vehicle.seatingCapacity && (
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm" style={{ color: '#B0B0B0' }}>
                                 Seats: {vehicle.seatingCapacity}
                               </p>
                             )}
                             {vehicle.vehicleType && (
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm" style={{ color: '#B0B0B0' }}>
                                 Type: {vehicle.vehicleType}
                               </p>
                             )}
@@ -110,17 +116,29 @@ const FleetPage = ({
                       </div>
                       
                       {/* Action Buttons */}
-                      <div className="flex justify-between items-center pt-4 border-t">
+                      <div className="flex justify-between items-center pt-4 border-t" style={{ borderColor: '#1F1F1F' }}>
                         <button
                           onClick={() => handleViewVehicleDetails(vehicle)}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
+                          className="px-3 py-1 rounded font-medium transition-colors"
+                          style={{ backgroundColor: '#FFC107', color: '#0D0D0D' }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FFB300'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFC107'}
                         >
                           View Details
                         </button>
                         <div className="flex space-x-3">
                           <button
                             onClick={() => handleEditVehicle(vehicle)}
-                            className="text-gray-600 hover:text-gray-800 p-2 rounded-md hover:bg-gray-100"
+                            className="p-2 rounded-md transition-colors"
+                            style={{ color: '#FFC107' }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#1F1F1F';
+                              e.currentTarget.style.color = '#FFB300';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.color = '#FFC107';
+                            }}
                             title="Edit Vehicle"
                           >
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,7 +147,16 @@ const FleetPage = ({
                           </button>
                           <button
                             onClick={() => handleDeleteVehicle(vehicle._id)}
-                            className="text-red-600 hover:text-red-800 p-2 rounded-md hover:bg-red-50"
+                            className="p-2 rounded-md transition-colors"
+                            style={{ color: '#F44336' }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#1F1F1F';
+                              e.currentTarget.style.color = '#D32F2F';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.color = '#F44336';
+                            }}
                             title="Delete Vehicle"
                           >
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

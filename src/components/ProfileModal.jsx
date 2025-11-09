@@ -243,12 +243,12 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+      <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 shadow-lg rounded-md bg-gray-800 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-gray-900">Business Profile</h3>
+          <h3 className="text-2xl font-bold text-yellow-500">Business Profile</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-400"
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -259,7 +259,7 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Profile Icon */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Profile Icon
             </label>
             <div className="flex items-center space-x-4">
@@ -281,7 +281,7 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
-                className="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="block text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
               />
             </div>
           </div>
@@ -289,7 +289,7 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
           {/* Company Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-white mb-1">
                 Company Name *
               </label>
               <input
@@ -298,13 +298,13 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
                 value={formData.companyName}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter company name"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-white mb-1">
                 Owner Name *
               </label>
               <input
@@ -313,13 +313,13 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
                 value={formData.ownerName}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter owner name"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-white mb-1">
                 PAN Card *
               </label>
               <input
@@ -329,7 +329,7 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
                 onChange={handleInputChange}
                 required
                 pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="ABCDE1234F"
                 style={{ textTransform: 'uppercase' }}
               />
@@ -338,10 +338,10 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
 
           {/* Address */}
           <div>
-            <h4 className="text-lg font-medium text-gray-900 mb-3">Address</h4>
+            <h4 className="text-lg font-medium text-yellow-500 mb-3">Address</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Address Line 1 *
                 </label>
                 <input
@@ -350,13 +350,13 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
                   value={formData.address.line1}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Street address"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Address Line 2
                 </label>
                 <input
@@ -364,13 +364,13 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
                   name="address.line2"
                   value={formData.address.line2}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Apartment, suite, etc. (optional)"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   City *
                 </label>
                 <input
@@ -379,13 +379,13 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
                   value={formData.address.city}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="City"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   State *
                 </label>
                 <input
@@ -394,13 +394,13 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
                   value={formData.address.state}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="State"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Pincode *
                 </label>
                 <input
@@ -410,13 +410,13 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
                   onChange={handleInputChange}
                   required
                   pattern="[1-9][0-9]{5}"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="123456"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Country
                 </label>
                 <input
@@ -424,7 +424,7 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
                   name="address.country"
                   value={formData.address.country}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Country"
                 />
               </div>
@@ -433,7 +433,7 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
 
           {/* Location Section */}
           <div>
-            <h4 className="text-lg font-medium text-gray-900 mb-3">Business Location</h4>
+            <h4 className="text-lg font-medium text-yellow-500 mb-3">Business Location</h4>
             
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
@@ -520,7 +520,7 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
               )}
 
               {showMap && (
-                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                <div className="border border-gray-600 rounded-lg overflow-hidden">
                   <div ref={mapRef} className="h-64 w-full"></div>
                 </div>
               )}
@@ -532,7 +532,7 @@ const ProfileModal = ({ isOpen, onClose, businessProfile, onSave }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+              className="px-6 py-2 text-sm font-medium text-white bg-gray-700 hover:bg-gray-200 rounded-md"
             >
               Cancel
             </button>

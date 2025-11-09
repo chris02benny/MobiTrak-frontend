@@ -184,17 +184,17 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Driver Profile</h2>
-        <p className="text-gray-600 mt-1">Manage your personal information and address</p>
+        <h2 className="text-2xl font-bold" style={{ color: '#FFC107' }}>Driver Profile</h2>
+        <p className="mt-1" style={{ color: '#888888' }}>Manage your personal information and address</p>
       </div>
       
       {/* Profile Status */}
       {driverProfile && (
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="shadow rounded-lg p-6" style={{ backgroundColor: '#1F1F1F' }}>
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-medium text-gray-900">Profile Status</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="text-lg font-medium" style={{ color: '#FFC107' }}>Profile Status</h3>
+              <p className="text-sm" style={{ color: '#B0B0B0' }}>
                 {driverProfile.profileCompleted ? 'Profile Completed' : 'Profile Incomplete'}
               </p>
             </div>
@@ -237,11 +237,11 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
 
       {/* Complete Driver Profile Form */}
       <form onSubmit={handleFormSubmit} className="space-y-6" noValidate>
-        <div className="bg-white rounded-lg shadow-sm border border-primary-200 overflow-hidden">
+        <div className="rounded-lg shadow-sm border overflow-hidden" style={{ backgroundColor: '#232323', borderColor: '#3a3a3a' }}>
           {/* Profile Header */}
-          <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-8">
+          <div className="px-6 py-8" style={{ background: 'linear-gradient(to right, #FEEE00, #d4c700)' }}>
             <div className="flex items-center">
-              <div className="h-20 w-20 bg-white rounded-full flex items-center justify-center overflow-hidden shadow-lg">
+              <div className="h-20 w-20 rounded-full flex items-center justify-center overflow-hidden shadow-lg" style={{ backgroundColor: '#232323' }}>
                 {profileIcon ? (
                   <img
                     src={profileIcon}
@@ -254,11 +254,11 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
                   </svg>
                 )}
               </div>
-              <div className="ml-6 text-white">
+              <div className="ml-6" style={{ color: '#000000' }}>
                 <h2 className="text-2xl font-bold">{profileForm.name || 'Driver Name'}</h2>
-                <p className="text-primary-100 text-lg">{profileForm.dlNumber || 'License Number'}</p>
+                <p className="text-lg" style={{ color: '#333333' }}>{profileForm.dlNumber || 'License Number'}</p>
                 {address.city && (
-                  <p className="text-primary-200 text-sm mt-1">
+                  <p className="text-sm mt-1" style={{ color: '#555555' }}>
                     {address.city}, {address.state}
                   </p>
                 )}
@@ -270,11 +270,11 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
           <div className="p-6 space-y-6">
             {/* Profile Icon Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium mb-2" style={{ color: '#FFFFFF' }}>
                 Profile Icon
               </label>
               <div className="flex items-center space-x-4">
-                <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                <div className="h-16 w-16 rounded-full flex items-center justify-center overflow-hidden" style={{ backgroundColor: '#3a3a3a' }}>
                   {profileIcon ? (
                     <img
                       src={profileIcon}
@@ -292,14 +292,14 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
                   type="file"
                   accept="image/*"
                   onChange={handleProfileIconUpload}
-                  className="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                  className="block text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                 />
               </div>
             </div>
 
             {/* Personal Information */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <h3 className="text-lg font-semibold mb-4 flex items-center" style={{ color: '#FEEE00' }}>
                 <svg className="h-5 w-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -307,50 +307,50 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Full Name
                   </label>
                   <input
                     type="text"
                     value={profileForm.name}
                     onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Date of Birth
                   </label>
                   <input
                     type="date"
                     value={profileForm.dateOfBirth}
                     onChange={(e) => setProfileForm(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Blood Group
                   </label>
                   <input
                     type="text"
                     value={profileForm.bloodGroup}
                     onChange={(e) => setProfileForm(prev => ({ ...prev, bloodGroup: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="Blood Group (e.g., A+, B-, O+)"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Vehicle Classes
                   </label>
-                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                  <div className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800">
                     {profileForm.vehicleClass.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {profileForm.vehicleClass.map((cls, index) => (
@@ -363,7 +363,7 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
                         ))}
                       </div>
                     ) : (
-                      <span className="text-gray-500">Vehicle classes will be extracted from license back</span>
+                      <span className="text-gray-400">Vehicle classes will be extracted from license back</span>
                     )}
                   </div>
                 </div>
@@ -372,7 +372,7 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
 
             {/* Driving License Information */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <h3 className="text-lg font-semibold text-yellow-500 mb-4 flex items-center">
                 <svg className="h-5 w-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -383,10 +383,10 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 {/* Front Image */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-white mb-2">
                     Driving License Front
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                  <div className="border-2 border-dashed border-gray-600 rounded-lg p-4">
                     {licenseImages.front ? (
                       <div className="space-y-2">
                         <div className="relative">
@@ -438,7 +438,7 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
                         />
                         <label
                           htmlFor="front-upload"
-                          className="cursor-pointer text-gray-500 hover:text-gray-700"
+                          className="cursor-pointer text-gray-400 hover:text-white"
                         >
                           <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
@@ -452,10 +452,10 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
 
                 {/* Back Image */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-white mb-2">
                     Driving License Back
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                  <div className="border-2 border-dashed border-gray-600 rounded-lg p-4">
                     {licenseImages.back ? (
                       <div className="space-y-2">
                         <div className="relative">
@@ -507,7 +507,7 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
                         />
                         <label
                           htmlFor="back-upload"
-                          className="cursor-pointer text-gray-500 hover:text-gray-700"
+                          className="cursor-pointer text-gray-400 hover:text-white"
                         >
                           <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
@@ -523,53 +523,53 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
               {/* License Form Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Driving License Number
                   </label>
                   <input
                     type="text"
                     value={profileForm.dlNumber}
                     onChange={(e) => setProfileForm(prev => ({ ...prev, dlNumber: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Issue Date
                   </label>
                   <input
                     type="date"
                     value={profileForm.dlIssueDate}
                     onChange={(e) => setProfileForm(prev => ({ ...prev, dlIssueDate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Validity Date
                   </label>
                   <input
                     type="date"
                     value={profileForm.dlValidity}
                     onChange={(e) => setProfileForm(prev => ({ ...prev, dlValidity: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Permanent Address
                   </label>
                   <textarea
                     value={profileForm.permanentAddress}
                     onChange={(e) => setProfileForm(prev => ({ ...prev, permanentAddress: e.target.value }))}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
                 </div>
@@ -578,7 +578,7 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
 
             {/* Address Section */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <h3 className="text-lg font-semibold text-yellow-500 mb-4 flex items-center">
                 <svg className="h-5 w-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -587,7 +587,7 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     City
                   </label>
                   <input
@@ -595,13 +595,13 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
                     name="city"
                     value={address.city}
                     onChange={handleAddressChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="City"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     State
                   </label>
                   <input
@@ -609,13 +609,13 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
                     name="state"
                     value={address.state}
                     onChange={handleAddressChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="State"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Pincode
                   </label>
                   <input
@@ -623,13 +623,13 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
                     name="pincode"
                     value={address.pincode}
                     onChange={handleAddressChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="123456"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Country
                   </label>
                   <input
@@ -637,7 +637,7 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
                     name="country"
                     value={address.country}
                     onChange={handleAddressChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="Country"
                   />
                 </div>
@@ -645,22 +645,31 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
             </div>
 
             {/* Form Actions */}
-            <div className="flex justify-end space-x-3 pt-6 border-t">
+            <div className="flex justify-end space-x-3 pt-6" style={{ borderColor: '#3a3a3a', borderTop: '1px solid' }}>
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                className="px-6 py-2 text-sm font-medium rounded-md transition-colors"
+                style={{ 
+                  backgroundColor: '#1a1a1a', 
+                  color: '#FFFFFF',
+                  border: '1px solid #3a3a3a'
+                }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="px-6 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 rounded-md flex items-center"
+                className="px-6 py-2 text-sm font-medium rounded-md flex items-center transition-colors"
+                style={{ 
+                  backgroundColor: '#FEEE00', 
+                  color: '#000000'
+                }}
               >
                 {saving ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
                     Saving...
                   </>
                 ) : (
@@ -678,7 +687,8 @@ const ProfilePage = ({ driverProfile, setDriverProfile, profileForm, setProfileF
           <div className="relative max-w-4xl max-h-full p-4">
             <button
               onClick={closeImageModal}
-              className="absolute top-4 right-4 bg-white hover:bg-gray-100 text-gray-800 rounded-full p-2 z-10 transition-colors"
+              className="absolute top-4 right-4 rounded-full p-2 z-10 transition-colors"
+              style={{ backgroundColor: '#232323', color: '#FFFFFF' }}
             >
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
