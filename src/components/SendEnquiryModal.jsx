@@ -280,27 +280,19 @@ const SendEnquiryModal = ({ isOpen, onClose, vehicle, onSubmit }) => {
     const end = new Date(form.endDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
     
-    if (start < today) {
-      toast.error('Start date cannot be in the past');
+    // Don't allow today's date
+    if (start <= today) {
+      toast.error('Start date must be from tomorrow onwards');
       return;
     }
     
-    // Allow same date for short distances (below 350km)
-    if (end < start) {
-      toast.error('End date cannot be before start date');
-      return;
-    }
-    
-    // For distances 350km or more, end date must be after start date
-    if (form.distanceKm >= 350 && end.getTime() === start.getTime()) {
-      toast.error('For distances 350km or more, end date must be after start date');
-      return;
-    }
-    
-    // For same day trips, ensure distance is calculated
-    if (end.getTime() === start.getTime() && form.distanceKm === 0) {
-      toast.error('Please calculate the route first to determine if same-day trip is allowed');
+    // End date must be after start date
+    if (end <= start) {
+      toast.error('End date must be after start date');
       return;
     }
     
@@ -331,6 +323,11 @@ const SendEnquiryModal = ({ isOpen, onClose, vehicle, onSubmit }) => {
   };
 
   const todayStr = () => new Date().toISOString().split('T')[0];
+  const tomorrowStr = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  };
   const maxDateStr = () => {
     const d = new Date();
     d.setMonth(d.getMonth() + 2);
@@ -340,21 +337,24 @@ const SendEnquiryModal = ({ isOpen, onClose, vehicle, onSubmit }) => {
   // Dynamic min date for end date based on distance
   const getEndDateMin = () => {
     if (form.distanceKm >= 350) {
-      return form.startDate || todayStr();
+      return form.startDate || tomorrowStr();
     }
-    return todayStr();
+    return form.startDate || tomorrowStr();
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Send Enquiry</h2>
+      <div className="rounded-lg shadow-xl max-w-4xl w-full h-[90vh] overflow-hidden flex flex-col" style={{ backgroundColor: '#1F1F1F' }}>
+        <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: '#0D0D0D' }}>
+          <h2 className="text-xl font-semibold" style={{ color: '#FFC107' }}>Send Enquiry</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
+            className="text-2xl transition-colors"
+            style={{ color: '#888888' }}
+            onMouseEnter={(e) => e.target.style.color = '#FFFFFF'}
+            onMouseLeave={(e) => e.target.style.color = '#888888'}
           >
             ×
           </button>
@@ -362,10 +362,10 @@ const SendEnquiryModal = ({ isOpen, onClose, vehicle, onSubmit }) => {
 
         {/* Vehicle Information */}
         {vehicle && (
-          <div className="bg-gray-50 p-4 border-b">
-            <h3 className="font-medium text-gray-900 mb-2">Vehicle Information</h3>
-            <div className="text-sm text-gray-600">
-              <div className="font-medium">{vehicle.registeredNumber} - {vehicle.makersName}</div>
+          <div className="p-4 border-b" style={{ backgroundColor: '#1a1a1a', borderColor: '#3a3a3a' }}>
+            <h3 className="font-medium mb-2" style={{ color: '#FFC107' }}>Vehicle Information</h3>
+            <div className="text-sm" style={{ color: '#888888' }}>
+              <div className="font-medium" style={{ color: '#FFFFFF' }}>{vehicle.registeredNumber} - {vehicle.makersName}</div>
               <div>{vehicle.vehicleClass} • {vehicle.vehicleType} • Seating: {vehicle.seatingCapacity}</div>
             </div>
           </div>
@@ -377,7 +377,7 @@ const SendEnquiryModal = ({ isOpen, onClose, vehicle, onSubmit }) => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">Route</label>
+                  <label className="block text-sm font-medium text-white">Route</label>
                   <button 
                     type="button" 
                     onClick={addWaypoint} 
@@ -393,7 +393,7 @@ const SendEnquiryModal = ({ isOpen, onClose, vehicle, onSubmit }) => {
                         <input 
                           value={w.address || ''} 
                           onChange={(e) => handleSearchChange(idx, e.target.value)} 
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" 
+                          className="flex-1 px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" 
                           placeholder={idx === 0 ? 'Choose starting point...' : (idx === form.waypoints.length - 1 ? 'Choose destination...' : `Stop ${idx}`)} 
                         />
                         <div className="flex items-center gap-1">
@@ -427,7 +427,7 @@ const SendEnquiryModal = ({ isOpen, onClose, vehicle, onSubmit }) => {
                         </div>
                       </div>
                       {Array.isArray(suggestions[idx]) && suggestions[idx].length > 0 && (
-                        <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-auto">
+                        <div className="absolute z-20 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-40 overflow-auto">
                           {suggestions[idx].map((s, sidx) => (
                             <button 
                               key={`wg-${idx}-${sidx}`} 
@@ -443,28 +443,28 @@ const SendEnquiryModal = ({ isOpen, onClose, vehicle, onSubmit }) => {
                     </div>
                   ))}
                   {form.waypoints.length < 2 && (
-                    <p className="text-xs text-gray-500">Add at least a start and a destination.</p>
+                    <p className="text-xs text-gray-400">Add at least a start and a destination.</p>
                   )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Start Date *
                   </label>
                   <input
                     type="date"
-                    min={todayStr()}
+                    min={tomorrowStr()}
                     max={maxDateStr()}
                     value={form.startDate}
                     onChange={(e) => setForm(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     End Date *
                   </label>
                   <input
@@ -473,25 +473,25 @@ const SendEnquiryModal = ({ isOpen, onClose, vehicle, onSubmit }) => {
                     max={maxDateStr()}
                     value={form.endDate}
                     onChange={(e) => setForm(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Message (Optional)
                 </label>
                 <textarea
                   value={form.message}
                   onChange={(e) => setForm(prev => ({ ...prev, message: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   placeholder="Any additional requirements or questions..."
                   rows={3}
                   maxLength={500}
                 />
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-gray-400 mt-1">
                   {form.message.length}/500 characters
                 </div>
               </div>
@@ -516,7 +516,7 @@ const SendEnquiryModal = ({ isOpen, onClose, vehicle, onSubmit }) => {
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                  className="px-4 py-2 text-white bg-gray-200 rounded-md hover:bg-gray-300"
                 >
                   Cancel
                 </button>
@@ -532,7 +532,7 @@ const SendEnquiryModal = ({ isOpen, onClose, vehicle, onSubmit }) => {
           </div>
 
           {/* Map Section */}
-          <div className="bg-gray-100 rounded-lg overflow-hidden h-full">
+          <div className="bg-gray-700 rounded-lg overflow-hidden h-full">
             <div ref={mapRef} className="w-full h-full" />
           </div>
         </div>

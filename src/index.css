@@ -5,6 +5,115 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* Dark theme base styles */
+  html {
+    background-color: #0D0D0D;
+  }
+
+  body {
+    background-color: #0D0D0D;
+    color: #FFFFFF;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Dark theme input styles */
+  input:not([type="file"]):not([type="checkbox"]):not([type="radio"]), 
+  textarea, 
+  select {
+    background-color: #0D0D0D !important;
+    border-color: #FFFFFF !important;
+    border-width: 1px !important;
+    color: #FFFFFF !important;
+  }
+
+  input:focus:not([type="file"]):not([type="checkbox"]):not([type="radio"]), 
+  textarea:focus, 
+  select:focus {
+    border-color: #FFFFFF !important;
+    outline: none !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #B0B0B0 !important;
+  }
+
+  /* File input styles */
+  input[type="file"]::file-selector-button {
+    background-color: #FFC107 !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+    border: none !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 9999px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease-in-out !important;
+  }
+
+  input[type="file"]::file-selector-button:hover {
+    background-color: #FFB300 !important;
+  }
+
+  /* Dark theme button styles - All buttons with rounded corners (excluding sidebar navigation) */
+  button:not([type="submit"]):not(.leaflet-zoom-animated):not(.leaflet-control-layers-toggle):not(.leaflet-popup-close-button):not(nav button):not(button[class*="nav"]):not(button[class*="sidebar"]),
+  button[type="submit"]:not(nav button):not(button[class*="nav"]):not(button[class*="sidebar"]),
+  button[type="button"]:not(nav button):not(button[class*="sidebar"]) {
+    background-color: #FFC107 !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+    border-radius: 0.5rem !important;
+    transition: all 0.2s ease-in-out !important;
+  }
+
+  /* Don't apply hover to sidebar/nav buttons */
+  button:hover:not(:disabled):not(.leaflet-zoom-animated):not(.leaflet-control-layers-toggle):not(.leaflet-popup-close-button):not(nav button):not(button[class*="nav"]):not(button[class*="sidebar"]) {
+    background-color: #FFB300 !important;
+  }
+
+  button:active:not(:disabled):not(.leaflet-zoom-animated):not(.leaflet-control-layers-toggle):not(.leaflet-popup-close-button):not(nav button):not(button[class*="nav"]):not(button[class*="sidebar"]) {
+    background-color: #FFA000 !important;
+  }
+
+  button:disabled:not(nav button):not(button[class*="nav"]):not(button[class*="sidebar"]) {
+    background-color: #666666 !important;
+    color: #888888 !important;
+    cursor: not-allowed !important;
+  }
+
+  /* Secondary button styles */
+  .btn-secondary,
+  button.secondary {
+    background-color: transparent !important;
+    color: #FFC107 !important;
+    border: 1px solid #FFC107 !important;
+    border-radius: 0.5rem !important;
+  }
+
+  .btn-secondary:hover,
+  button.secondary:hover {
+    background-color: #1F1F1F !important;
+  }
+
+  /* Dark theme card styles */
+  .card {
+    background-color: #1F1F1F;
+    border: 1px solid #1F1F1F;
+    color: #FFFFFF;
+    box-shadow: 0 4px 10px rgba(255, 193, 7, 0.15);
+    transition: all 0.2s ease-in-out;
+  }
+
+  .card:hover {
+    box-shadow: 0 6px 15px rgba(255, 193, 7, 0.25);
+  }
+}
+
 /* Map container safety */
 .leaflet-container {
   width: 100%;
@@ -19,14 +128,5 @@ input[type=number]::-webkit-inner-spin-button {
 }
 input[type=number] {
   -moz-appearance: textfield;
-}
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 

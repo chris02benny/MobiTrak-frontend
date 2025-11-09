@@ -94,7 +94,7 @@ const MyTripsPage = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">My Trips</h2>
+        <h2 className="text-2xl font-bold" style={{ color: '#FFC107' }}>My Trips</h2>
         <button 
           onClick={fetchTrips} 
           className="text-sm px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700"
@@ -103,20 +103,20 @@ const MyTripsPage = () => {
         </button>
       </div>
 
-      <div className="bg-white shadow rounded-lg">
-        <div className="p-4 border-b">
-          <h3 className="text-lg font-medium text-gray-900">Trip History</h3>
+      <div className="shadow rounded-lg" style={{ backgroundColor: '#1F1F1F' }}>
+        <div className="p-4 border-b" style={{ borderColor: '#0D0D0D' }}>
+          <h3 className="text-lg font-medium" style={{ color: '#FFC107' }}>Trip History</h3>
         </div>
         {loading ? (
           <div className="p-6">Loading trips...</div>
         ) : trips.length === 0 ? (
-          <div className="p-6 text-gray-600">No trips yet.</div>
+          <div className="p-6 text-gray-400">No trips yet.</div>
         ) : (
           <div className="p-4 space-y-4">
             {trips.map((trip) => (
               <div key={trip._id} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-yellow-500">
                     {trip.startAddress} → {trip.endAddress}
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs ${
@@ -129,17 +129,17 @@ const MyTripsPage = () => {
                     {trip.status.replace('_', ' ')}
                   </span>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-400">
                   Dates: {new Date(trip.startDate).toLocaleDateString()} - {new Date(trip.endDate).toLocaleDateString()} • {trip.numDays || 1} day(s)
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-400">
                   Distance: {trip.distanceKm} km • Total: ₹{Number(trip.totalAmount || 0).toLocaleString()}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-400">
                   Vehicle: {trip.vehicleId?.registeredNumber || trip.vehicleId} • Driver: {trip.driverId?.name || trip.driverId}
                 </div>
                 {trip.paymentStatus && (
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-400">
                     Payment Status: {trip.paymentStatus === 'paid' ? 'Fully Paid' : 
                                    trip.paymentStatus === 'advance_paid' ? 'Advance Paid' : 'Pending Payment'}
                   </div>

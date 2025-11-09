@@ -98,27 +98,27 @@ const VehiclesPage = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Find Vehicles</h2>
+      <h2 className="text-2xl font-bold" style={{ color: '#FFC107' }}>Find Vehicles</h2>
       
       {/* Search and Filters */}
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="shadow rounded-lg p-6" style={{ backgroundColor: '#232323' }}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <label className="block text-sm font-medium text-white mb-2">Search</label>
             <input
               type="text"
               value={searchFilters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Vehicle number, make, class..."
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Class</label>
+            <label className="block text-sm font-medium text-white mb-2">Vehicle Class</label>
             <select
               value={searchFilters.vehicleClass}
               onChange={(e) => handleFilterChange('vehicleClass', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">All Classes</option>
               <option value="LMV">LMV</option>
@@ -128,11 +128,11 @@ const VehiclesPage = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
+            <label className="block text-sm font-medium text-white mb-2">Vehicle Type</label>
             <select
               value={searchFilters.vehicleType}
               onChange={(e) => handleFilterChange('vehicleType', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">All Types</option>
               <option value="Logistics">Logistics</option>
@@ -140,60 +140,60 @@ const VehiclesPage = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Min Seating</label>
+            <label className="block text-sm font-medium text-white mb-2">Min Seating</label>
             <input
               type="number"
               value={searchFilters.minSeatingCapacity}
               onChange={(e) => handleFilterChange('minSeatingCapacity', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Min capacity"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Max Seating</label>
+            <label className="block text-sm font-medium text-white mb-2">Max Seating</label>
             <input
               type="number"
               value={searchFilters.maxSeatingCapacity}
               onChange={(e) => handleFilterChange('maxSeatingCapacity', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Max capacity"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+            <label className="block text-sm font-medium text-white mb-2">Start Date</label>
             <input
               type="date"
               value={searchFilters.startDate}
               onChange={(e) => handleFilterChange('startDate', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              min={new Date().toISOString().split('T')[0]}
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+            <label className="block text-sm font-medium text-white mb-2">End Date</label>
             <input
               type="date"
               value={searchFilters.endDate}
               onChange={(e) => handleFilterChange('endDate', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              min={searchFilters.startDate || new Date().toISOString().split('T')[0]}
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              min={searchFilters.startDate || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
             />
           </div>
         </div>
-        <div className="mt-4 text-sm text-gray-600">
+        <div className="mt-4 text-sm text-gray-400">
           <p>💡 <strong>Tip:</strong> Select start and end dates to see only vehicles available for your trip dates.</p>
         </div>
       </div>
 
       {/* Vehicles List */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="p-4 border-b">
-          <h3 className="text-lg font-medium text-gray-900">Available Vehicles ({vehicles.length})</h3>
+      <div className="shadow rounded-lg" style={{ backgroundColor: '#232323' }}>
+        <div className="p-4 border-b" style={{ borderColor: '#3a3a3a' }}>
+          <h3 className="text-lg font-medium" style={{ color: '#FFC107' }}>Available Vehicles ({vehicles.length})</h3>
         </div>
         {loading ? (
           <div className="p-6">Loading vehicles...</div>
         ) : vehicles.length === 0 ? (
-          <div className="p-6 text-gray-600">No vehicles found matching your criteria.</div>
+          <div className="p-6 text-gray-400">No vehicles found matching your criteria.</div>
         ) : (
           <div className="p-4 space-y-4">
             {vehicles.map((vehicle) => (
@@ -207,14 +207,14 @@ const VehiclesPage = () => {
                     />
                   )}
                   <div>
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-yellow-500">
                       {vehicle.registeredNumber} - {vehicle.makersName}
                     </div>
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-gray-400">
                       Class: {vehicle.vehicleClass} • Type: {vehicle.vehicleType || 'N/A'} • 
                       Seating: {vehicle.seatingCapacity || 'N/A'}
                     </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-gray-400">
                               Business: {vehicle.businessId?.name || vehicle.businessId?.email || 'N/A'}
                             </div>
                   </div>

@@ -12,40 +12,79 @@ const TripsPage = ({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Trips</h2>
+        <h2 className="text-2xl font-bold" style={{ color: '#FEEE00' }}>Trips</h2>
       </div>
 
       {/* Trips Sub Navigation */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="border-b border-gray-200">
+      <div className="shadow rounded-lg" style={{ backgroundColor: '#232323' }}>
+        <div className="border-b" style={{ borderColor: '#3a3a3a' }}>
           <nav className="flex space-x-8 px-6">
             <button
               onClick={() => setActiveSubTab(prev => ({ ...prev, trips: 'add' }))}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeSubTab.trips === 'add'
-                  ? 'border-yellow-500 text-yellow-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className="py-4 px-1 border-b-2 font-medium text-sm transition-colors"
+              style={activeSubTab.trips === 'add' ? {
+                borderColor: '#FEEE00',
+                color: '#FEEE00'
+              } : {
+                borderColor: 'transparent',
+                color: '#888888'
+              }}
+              onMouseEnter={(e) => {
+                if (activeSubTab.trips !== 'add') {
+                  e.currentTarget.style.color = '#FFFFFF';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeSubTab.trips !== 'add') {
+                  e.currentTarget.style.color = '#888888';
+                }
+              }}
             >
               Add Trip
             </button>
             <button
               onClick={() => setActiveSubTab(prev => ({ ...prev, trips: 'pending' }))}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeSubTab.trips === 'pending'
-                  ? 'border-yellow-500 text-yellow-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className="py-4 px-1 border-b-2 font-medium text-sm transition-colors"
+              style={activeSubTab.trips === 'pending' ? {
+                borderColor: '#FEEE00',
+                color: '#FEEE00'
+              } : {
+                borderColor: 'transparent',
+                color: '#888888'
+              }}
+              onMouseEnter={(e) => {
+                if (activeSubTab.trips !== 'pending') {
+                  e.currentTarget.style.color = '#FFFFFF';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeSubTab.trips !== 'pending') {
+                  e.currentTarget.style.color = '#888888';
+                }
+              }}
             >
               Pending Trips
             </button>
             <button
               onClick={() => setActiveSubTab(prev => ({ ...prev, trips: 'view' }))}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeSubTab.trips === 'view'
-                  ? 'border-yellow-500 text-yellow-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className="py-4 px-1 border-b-2 font-medium text-sm transition-colors"
+              style={activeSubTab.trips === 'view' ? {
+                borderColor: '#FEEE00',
+                color: '#FEEE00'
+              } : {
+                borderColor: 'transparent',
+                color: '#888888'
+              }}
+              onMouseEnter={(e) => {
+                if (activeSubTab.trips !== 'view') {
+                  e.currentTarget.style.color = '#FFFFFF';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeSubTab.trips !== 'view') {
+                  e.currentTarget.style.color = '#888888';
+                }
+              }}
             >
               Confirmed Trips
             </button>

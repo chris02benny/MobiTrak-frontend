@@ -4,32 +4,38 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#fefce8',
-          100: '#fef9c3',
-          200: '#fef08a',
-          300: '#fde047',
-          400: '#facc15',
-          500: '#eab308',
-          600: '#ca8a04',
-          700: '#a16207',
-          800: '#854d0e',
-          900: '#713f12',
-        }
+        primary: '#FFC107', // Amber yellow
+        background: '#0D0D0D', // Charcoal black
+        card: '#1F1F1F', // Dark gray
+        textSecondary: '#B0B0B0', // Light gray
+        success: '#4CAF50', // Green
+        error: '#F44336', // Red
+        'primary-hover': '#FFB300',
+        'primary-active': '#FFA000',
       },
-      safelist: [
-        // Blue variants
-        'border-blue-500', 'bg-blue-50', 'ring-blue-200', 'bg-blue-100', 'text-blue-600', 'text-blue-900', 'text-blue-700',
-        // Green variants  
-        'border-green-500', 'bg-green-50', 'ring-green-200', 'bg-green-100', 'text-green-600', 'text-green-900', 'text-green-700',
-        // Purple variants
-        'border-purple-500', 'bg-purple-50', 'ring-purple-200', 'bg-purple-100', 'text-purple-600', 'text-purple-900', 'text-purple-700',
-      ]
+      backgroundColor: {
+        'dark-bg': '#0D0D0D',
+        'dark-card': '#1F1F1F',
+      },
+      textColor: {
+        'dark-primary': '#FFFFFF',
+        'dark-secondary': '#B0B0B0',
+      },
+      borderColor: {
+        'dark-border': '#1F1F1F',
+        'primary-border': '#FFC107',
+      },
+      boxShadow: {
+        'card': '0 4px 10px rgba(255, 193, 7, 0.15)',
+        'card-hover': '0 6px 15px rgba(255, 193, 7, 0.25)',
+      },
     },
   },
   plugins: [],
 }
+
 
